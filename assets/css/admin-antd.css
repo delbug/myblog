@@ -11,15 +11,17 @@
   min-height: calc(100vh - 112px);
 }
 
-.admin-app .admin-login-page {
+.admin-app.admin-login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
   background: linear-gradient(135deg, #f0f5ff 0%, #f6ffed 100%);
 }
 
-.admin-app .admin-login-card {
+.admin-app.admin-login-page .admin-login-card {
   width: 100%;
   max-width: 420px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);

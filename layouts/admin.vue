@@ -15,7 +15,7 @@
           <a-menu
             theme="dark"
             mode="inline"
-            :selected-keys="[route.path]"
+            :selected-keys="selectedMenuKeys"
             :items="menuItems"
             @click="onMenuClick"
           />
@@ -74,9 +74,6 @@ import {
 import { resolveAdminMenuIcon } from '~/utils/adminMenuIcon'
 import type { MenuProps } from 'ant-design-vue'
 
-import 'ant-design-vue/dist/reset.css'
-import '~/assets/css/admin-antd.css'
-
 const collapsed = ref(false)
 const { user, logout: authLogout, fetchUser } = useAuth()
 const { fetchPermissions } = usePermission()
@@ -105,6 +102,14 @@ const menuItems = computed<MenuProps['items']>(() =>
     icon: () => h(resolveAdminMenuIcon(item.icon)),
   })),
 )
+
+const selectedMenuKeys = computed(() => {
+  const path = route.path
+  const match = navItems.value
+    .filter((item) => path === item.path || (item.path !== '/admin' && path.startsWith(`${item.path}/`)))
+    .sort((a, b) => b.path.length - a.path.length)[0]
+  return match ? [match.path] : []
+})
 
 await fetchUser()
 await fetchPermissions()

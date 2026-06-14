@@ -12,11 +12,16 @@ export default defineNuxtConfig({
     '@nuxtjs/sitemap',
   ],
 
-  css: ['~/assets/css/main.css'],
+  css: [
+    '~/assets/css/main.css',
+    'ant-design-vue/dist/reset.css',
+    '~/assets/css/site-antd.css',
+    '~/assets/css/admin-antd.css',
+  ],
 
   colorMode: {
     classSuffix: '',
-    preference: 'system',
+    preference: 'light',
     fallback: 'light',
   },
 
@@ -65,7 +70,7 @@ export default defineNuxtConfig({
     preset: 'node-server',
     publicAssets: [
       {
-        baseURL: '/vditor',
+        baseURL: '/vditor/dist',
         dir: 'node_modules/vditor/dist',
         maxAge: 60 * 60 * 24 * 365,
       },

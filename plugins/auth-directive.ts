@@ -5,7 +5,8 @@
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.directive('auth', {
     getSSRProps() {
-      return {}
+      // SSR 先隐藏，客户端按权限显示，避免 hydration mismatch
+      return { style: { display: 'none' } }
     },
     mounted(el, binding) {
       const codes = useState<string[]>('perm-codes', () => [])
