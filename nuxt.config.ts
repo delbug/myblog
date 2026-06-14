@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
+  compatibilityDate: '2025-06-14',
   devtools: { enabled: true },
 
   // SSR 是 SEO 的核心：搜索引擎能直接抓取完整 HTML

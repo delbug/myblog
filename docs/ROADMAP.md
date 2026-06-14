@@ -13,6 +13,7 @@
 ## ✅ 第二阶段（已完成）
 
 ### 后台体验（vue3-antdv-admin）
+
 - [x] 动态表格 `AdminDynamicTable`（搜索 + 分页 + CSV 导出）
 - [x] Schema 驱动表单 `AdminSchemaForm`
 - [x] 多页签导航 `AdminTabs`
@@ -23,6 +24,7 @@
 - [x] API 文档页 `/admin/api-docs`
 
 ### 博客功能（nodejs-koa-blog）
+
 - [x] 评论嵌套回复 UI（CommentItem 树形）
 - [x] 登录用户评论（自动关联 userId）
 - [x] 文章软删除（deletedAt 回收站）
@@ -34,6 +36,7 @@
 - [x] 全文搜索 API（`/api/search`，MySQL LIKE）
 
 ### 工程化
+
 - [x] ESLint + Prettier 配置
 - [x] 单元测试 Vitest（`tests/utils.test.ts`）
 - [x] OpenAPI 规范（`public/openapi.json`）
@@ -41,6 +44,7 @@
 - [x] GitHub Actions CI（`.github/workflows/ci.yml`）
 
 ### 存储与性能
+
 - [x] 存储抽象（local / oss 预留，`server/utils/storage.ts`）
 - [x] Redis 缓存层（可选，无 Redis 时内存降级）
 - [x] ISR 增量渲染（首页 10min、文章页 1h）
@@ -68,6 +72,7 @@ npm run db:seed   # 含权限种子数据
 ```
 
 新增表/字段：
+
 - `permissions` / `role_permissions` — RBAC
 - `post_likes` / `post_favorites` — 点赞收藏
 - `posts.deleted_at` / `like_count` / `favorite_count` — 软删除与计数
@@ -96,3 +101,4 @@ OSS_BUCKET=
 OSS_ACCESS_KEY=
 OSS_SECRET_KEY=
 ```
+
