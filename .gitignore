@@ -3,6 +3,8 @@
 .output
 .data
 dist
+!server/routes/vditor/dist/
+!server/routes/vditor/dist/**
 
 # Node
 node_modules

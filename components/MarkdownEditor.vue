@@ -4,7 +4,7 @@
       Markdown 编辑器加载失败：{{ initError }}
       <a-button type="link" size="small" @click="retryInit">重试</a-button>
     </div>
-    <div v-show="!initError" ref="editorRef" class="vditor-editor" />
+    <div v-else ref="editorRef" class="vditor-editor" />
     <template #fallback>
       <a-textarea
         :value="modelValue"
@@ -19,10 +19,6 @@
 <script setup lang="ts">
 import 'vditor/dist/index.css'
 
-/**
- * Vditor Markdown 编辑器：分屏预览、工具栏、图片上传
- * 使用 /vditor 本地静态资源（见 nuxt.config nitro.publicAssets），避免 CDN 不可用
- */
 const props = defineProps<{
   modelValue: string
   placeholder?: string
@@ -34,19 +30,34 @@ const editorRef = ref<HTMLElement>()
 const initError = ref('')
 const colorMode = useColorMode()
 let vditor: import('vditor').default | null = null
+let vditorReady = false
 let initSeq = 0
+
+function safeDestroyVditor() {
+  if (!vditor) return
+  try {
+    if (vditorReady) {
+      emit('update:modelValue', vditor.getValue())
+      vditor.destroy()
+    }
+  } catch {
+    // 未完整初始化时 destroy 可能抛错，忽略即可
+  }
+  vditor = null
+  vditorReady = false
+}
 
 async function initVditor() {
   initSeq += 1
   const seq = initSeq
   initError.value = ''
+  vditorReady = false
 
   await nextTick()
   if (!editorRef.value || seq !== initSeq) return
 
   try {
-    vditor?.destroy()
-    vditor = null
+    safeDestroyVditor()
 
     const Vditor = (await import('vditor')).default
 
@@ -84,6 +95,7 @@ async function initVditor() {
       },
       after: () => {
         if (seq !== initSeq || !vditor) return
+        vditorReady = true
         if (props.modelValue && vditor.getValue() !== props.modelValue) {
           vditor.setValue(props.modelValue, true)
         }
@@ -91,6 +103,8 @@ async function initVditor() {
     })
   } catch (e) {
     initError.value = e instanceof Error ? e.message : '未知错误'
+    vditor = null
+    vditorReady = false
   }
 }
 
@@ -103,19 +117,20 @@ onMounted(() => {
 })
 
 watch(() => props.modelValue, (val) => {
-  if (vditor && vditor.getValue() !== val) {
+  if (vditorReady && vditor && vditor.getValue() !== val) {
     vditor.setValue(val, true)
   }
 })
 
 watch(() => colorMode.value, (mode) => {
-  vditor?.setTheme(mode === 'dark' ? 'dark' : 'classic')
+  if (vditorReady && vditor) {
+    vditor.setTheme(mode === 'dark' ? 'dark' : 'classic')
+  }
 })
 
 onBeforeUnmount(() => {
   initSeq += 1
-  vditor?.destroy()
-  vditor = null
+  safeDestroyVditor()
 })
 </script>
 
@@ -127,9 +142,5 @@ onBeforeUnmount(() => {
 .vditor-editor :deep(.vditor) {
   border-radius: 8px;
   border: 1px solid #d9d9d9;
-}
-
-:global(.dark) .vditor-editor :deep(.vditor) {
-  border-color: #424242;
 }
 </style>

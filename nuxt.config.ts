@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { vditorStaticPlugin } from './vite-plugins/vditor-static'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-06-14',
   devtools: { enabled: true },
@@ -78,6 +80,7 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    plugins: [vditorStaticPlugin()],
     optimizeDeps: {
       include: ['vditor'],
     },

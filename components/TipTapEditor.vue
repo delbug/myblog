@@ -1,7 +1,7 @@
 <template>
   <ClientOnly>
-    <div class="tiptap-editor rounded-lg border dark:border-gray-700">
-      <div v-if="editor" class="flex flex-wrap gap-1 border-b border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-800/50">
+    <div class="tiptap-editor rounded-lg border border-gray-200">
+      <div v-if="editor" class="flex flex-wrap gap-1 border-b border-gray-200 bg-gray-50 p-2">
         <button type="button" class="toolbar-btn" :class="{ active: editor.isActive('bold') }" @click="editor.chain().focus().toggleBold().run()">B</button>
         <button type="button" class="toolbar-btn" :class="{ active: editor.isActive('italic') }" @click="editor.chain().focus().toggleItalic().run()">I</button>
         <button type="button" class="toolbar-btn" :class="{ active: editor.isActive('heading', { level: 2 }) }" @click="editor.chain().focus().toggleHeading({ level: 2 }).run()">H</button>
@@ -12,7 +12,12 @@
       <EditorContent :editor="editor" class="prose-blog min-h-[480px] p-4" />
     </div>
     <template #fallback>
-      <textarea :value="modelValue" class="input min-h-[480px] w-full font-mono text-sm" readonly />
+      <a-textarea
+        :value="modelValue"
+        :rows="18"
+        :placeholder="placeholder"
+        readonly
+      />
     </template>
   </ClientOnly>
 </template>
@@ -32,7 +37,7 @@ const { render } = useMarkdownPreview()
 const turndown = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' })
 
 const editor = useEditor({
-  content: props.modelValue ? render(props.modelValue) : '<p></p>',
+  content: '<p></p>',
   extensions: [
     StarterKit,
     Image.configure({ inline: true }),
@@ -40,9 +45,14 @@ const editor = useEditor({
     Placeholder.configure({ placeholder: props.placeholder || '开始写作...' }),
   ],
   onUpdate: ({ editor: ed }) => {
-    const html = ed.getHTML()
-    const md = turndown.turndown(html)
+    const md = turndown.turndown(ed.getHTML())
     emit('update:modelValue', md)
+  },
+  onCreate: ({ editor: ed }) => {
+    const html = props.modelValue ? render(props.modelValue) : '<p></p>'
+    if (ed.getHTML() !== html) {
+      ed.commands.setContent(html, { emitUpdate: false })
+    }
   },
 })
 
@@ -50,7 +60,7 @@ watch(() => props.modelValue, (val) => {
   if (!editor.value) return
   const html = val ? render(val) : '<p></p>'
   if (editor.value.getHTML() !== html) {
-    editor.value.commands.setContent(html, false)
+    editor.value.commands.setContent(html, { emitUpdate: false })
   }
 })
 
@@ -72,13 +82,11 @@ async function insertImage() {
   }
   input.click()
 }
-
-onBeforeUnmount(() => editor.value?.destroy())
 </script>
 
 <style scoped>
 .toolbar-btn {
-  @apply rounded px-2 py-1 text-sm text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700;
+  @apply rounded px-2 py-1 text-sm text-gray-600 hover:bg-gray-200;
 }
 .toolbar-btn.active {
   @apply bg-primary-100 text-primary-700;
