@@ -3,7 +3,12 @@
  */
 const memoryCache = new Map<string, { value: string; expireAt: number }>()
 
-let redisClient: { get: (k: string) => Promise<string | null>; setex: (k: string, ttl: number, v: string) => Promise<void>; del: (k: string) => Promise<void> } | null = null
+let redisClient: {
+  get: (k: string) => Promise<string | null>
+  setex: (k: string, ttl: number, v: string) => Promise<void>
+  del: (k: string) => Promise<void>
+  incr: (k: string) => Promise<number>
+} | null = null
 
 /** 懒加载 Redis 客户端 */
 async function getRedis() {
@@ -18,6 +23,7 @@ async function getRedis() {
       get: (k) => client.get(k),
       setex: (k, ttl, v) => client.setex(k, ttl, v).then(() => {}),
       del: (k) => client.del(k).then(() => {}),
+      incr: (k) => client.incr(k),
     }
     return redisClient
   } catch {
@@ -61,4 +67,31 @@ export async function cacheDel(key: string) {
     return
   }
   memoryCache.delete(key)
+}
+
+/** 递增计数（阅读量等） */
+export async function cacheIncr(key: string): Promise<number> {
+  const redis = await getRedis()
+  if (redis) {
+    return redis.incr(key)
+  }
+
+  const entry = memoryCache.get(key)
+  const current = entry ? Number(JSON.parse(entry.value)) || 0 : 0
+  const next = current + 1
+  memoryCache.set(key, { value: JSON.stringify(next), expireAt: Date.now() + 86400_000 })
+  return next
+}
+
+/** 读取数值型缓存 */
+export async function cacheGetNumber(key: string): Promise<number> {
+  const redis = await getRedis()
+  if (redis) {
+    const raw = await redis.get(key)
+    return Number(raw) || 0
+  }
+
+  const entry = memoryCache.get(key)
+  if (!entry || Date.now() > entry.expireAt) return 0
+  return Number(JSON.parse(entry.value)) || 0
 }

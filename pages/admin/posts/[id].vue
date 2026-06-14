@@ -51,18 +51,25 @@
 
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <label class="mb-1 block text-sm">封面图 URL</label>
-          <input v-model="form.coverImage" class="input" placeholder="上传图片后粘贴 URL" />
+          <label class="mb-1 block text-sm">作者</label>
+          <select v-model="form.authorId" class="input">
+            <option v-for="u in adminUsers" :key="u.id" :value="u.id">{{ u.username }} ({{ u.role }})</option>
+          </select>
         </div>
         <div>
-          <label class="mb-1 block text-sm">SEO 关键词</label>
-          <input v-model="form.seoKeyword" class="input" placeholder="逗号分隔" />
+          <label class="mb-1 block text-sm">封面图</label>
+          <ImageUpload v-model="form.coverImage" placeholder="上传或粘贴图片 URL" />
         </div>
       </div>
 
       <div>
-        <label class="mb-1 block text-sm">正文 (Markdown) *</label>
-        <MarkdownEditor v-model="form.content" />
+        <label class="mb-1 block text-sm">SEO 关键词</label>
+        <input v-model="form.seoKeyword" class="input" placeholder="逗号分隔" />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm">正文 *</label>
+        <ArticleEditor v-model="form.content" />
       </div>
 
       <div class="flex items-center gap-2">
@@ -106,6 +113,7 @@ const form = reactive({
   categoryId: null as number | null,
   status: 'draft' as 'draft' | 'published',
   tagIds: [] as number[],
+  authorId: null as number | null,
   isTop: 0,
 })
 
@@ -115,8 +123,10 @@ const message = ref('')
 
 const { data: categoriesData } = await useFetch('/api/categories')
 const { data: tagsData } = await useFetch('/api/tags')
+const { data: usersData } = await useFetch('/api/admin/users')
 const categories = computed(() => categoriesData.value?.data || [])
 const tags = computed(() => tagsData.value?.data || [])
+const adminUsers = computed(() => (usersData.value?.data?.list || usersData.value?.data || []) as Array<{ id: number; username: string; role: string }>)
 
 /** 编辑模式下加载文章数据 */
 if (isEdit.value) {
@@ -133,6 +143,7 @@ if (isEdit.value) {
       categoryId: post.categoryId,
       status: post.status,
       tagIds: post.tagIds || [],
+      authorId: post.authorId,
       isTop: post.isTop,
     })
   }

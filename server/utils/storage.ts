@@ -8,46 +8,132 @@ export interface StorageResult {
   filename: string
 }
 
+type StorageDriver = 'local' | 'aliyun' | 'qiniu' | 'cloudinary' | 'oss'
+
+function resolveDriver(): StorageDriver {
+  const driver = (process.env.STORAGE_DRIVER || 'local').toLowerCase()
+  if (driver === 'oss') return 'aliyun'
+  if (driver === 'aliyun' || driver === 'qiniu' || driver === 'cloudinary') return driver
+  return 'local'
+}
+
 /**
- * 存储抽象：本地存储（默认），OSS 通过环境变量切换
+ * 存储抽象：local / aliyun(OSS) / qiniu
  */
 export async function storeFile(
   buffer: Buffer,
   originalName: string,
   siteUrl: string,
 ): Promise<StorageResult> {
-  const driver = process.env.STORAGE_DRIVER || 'local'
+  const driver = resolveDriver()
 
-  if (driver === 'oss') {
-    return storeToOss(buffer, originalName, siteUrl)
+  if (driver === 'aliyun') {
+    return storeToAliyun(buffer, originalName)
+  }
+  if (driver === 'qiniu') {
+    return storeToQiniu(buffer, originalName)
+  }
+  if (driver === 'cloudinary') {
+    return storeToCloudinary(buffer, originalName)
   }
   return storeLocal(buffer, originalName, siteUrl)
 }
 
-/** 本地存储 */
-async function storeLocal(buffer: Buffer, originalName: string, siteUrl: string): Promise<StorageResult> {
+function buildFilename(buffer: Buffer, originalName: string): string {
   const ext = extname(originalName) || '.png'
   const hash = createHash('md5').update(buffer).digest('hex')
-  const filename = `${hash}${ext}`
+  return `${hash}${ext}`
+}
+
+/** 本地存储 */
+async function storeLocal(buffer: Buffer, originalName: string, siteUrl: string): Promise<StorageResult> {
+  const filename = buildFilename(buffer, originalName)
   const uploadDir = join(process.cwd(), 'public', 'uploads')
   await mkdir(uploadDir, { recursive: true })
   await writeFile(join(uploadDir, filename), buffer)
   return { url: `${siteUrl}/uploads/${filename}`, path: `/uploads/${filename}`, filename }
 }
 
-/**
- * OSS 存储（预留接口，需配置 OSS 环境变量后实现）
- * OSS_REGION / OSS_BUCKET / OSS_ACCESS_KEY / OSS_SECRET_KEY
- */
-async function storeToOss(buffer: Buffer, originalName: string, siteUrl: string): Promise<StorageResult> {
+/** 阿里云 OSS */
+async function storeToAliyun(buffer: Buffer, originalName: string): Promise<StorageResult> {
   const { OSS_REGION, OSS_BUCKET, OSS_ACCESS_KEY, OSS_SECRET_KEY, OSS_CDN_URL } = process.env
   if (!OSS_REGION || !OSS_BUCKET || !OSS_ACCESS_KEY || !OSS_SECRET_KEY) {
-    console.warn('[storage] OSS 未配置，回退到本地存储')
-    return storeLocal(buffer, originalName, siteUrl)
+    console.warn('[storage] 阿里云 OSS 未配置，回退本地')
+    return storeLocal(buffer, originalName, process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000')
   }
 
-  // 预留 OSS SDK 接入点；当前回退本地
-  // 接入示例：ali-oss / @aws-sdk/client-s3
-  console.warn('[storage] OSS SDK 待接入，当前回退本地存储')
-  return storeLocal(buffer, originalName, siteUrl)
+  const OSS = (await import('ali-oss')).default
+  const client = new OSS({
+    region: OSS_REGION,
+    accessKeyId: OSS_ACCESS_KEY,
+    accessKeySecret: OSS_SECRET_KEY,
+    bucket: OSS_BUCKET,
+  })
+
+  const filename = buildFilename(buffer, originalName)
+  const objectKey = `uploads/${filename}`
+  await client.put(objectKey, buffer)
+
+  const url = OSS_CDN_URL
+    ? `${OSS_CDN_URL.replace(/\/$/, '')}/${objectKey}`
+    : `https://${OSS_BUCKET}.${OSS_REGION}.aliyuncs.com/${objectKey}`
+
+  return { url, path: `/${objectKey}`, filename }
+}
+
+/** 七牛云 */
+async function storeToQiniu(buffer: Buffer, originalName: string): Promise<StorageResult> {
+  const { QINIU_ACCESS_KEY, QINIU_SECRET_KEY, QINIU_BUCKET, QINIU_DOMAIN } = process.env
+  if (!QINIU_ACCESS_KEY || !QINIU_SECRET_KEY || !QINIU_BUCKET || !QINIU_DOMAIN) {
+    console.warn('[storage] 七牛云未配置，回退本地')
+    return storeLocal(buffer, originalName, process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000')
+  }
+
+  const qiniu = await import('qiniu')
+  const mac = new qiniu.auth.digest.Mac(QINIU_ACCESS_KEY, QINIU_SECRET_KEY)
+  const config = new qiniu.conf.Config()
+  const formUploader = new qiniu.form_up.FormUploader(config)
+  const putExtra = new qiniu.form_up.PutExtra()
+
+  const filename = buildFilename(buffer, originalName)
+  const objectKey = `uploads/${filename}`
+  const options = { scope: `${QINIU_BUCKET}:${objectKey}` }
+  const uploadToken = new qiniu.rs.PutPolicy(options).uploadToken(mac)
+
+  await new Promise<void>((resolve, reject) => {
+    formUploader.put(uploadToken, objectKey, buffer, putExtra, (err) => {
+      if (err) reject(err)
+      else resolve()
+    })
+  })
+
+  const url = `${QINIU_DOMAIN.replace(/\/$/, '')}/${objectKey}`
+  return { url, path: `/${objectKey}`, filename }
+}
+
+/** Cloudinary 图床 */
+async function storeToCloudinary(buffer: Buffer, originalName: string): Promise<StorageResult> {
+  const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_FOLDER } = process.env
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+    console.warn('[storage] Cloudinary 未配置，回退本地')
+    return storeLocal(buffer, originalName, process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000')
+  }
+
+  const { v2: cloudinary } = await import('cloudinary')
+  cloudinary.config({
+    cloud_name: CLOUDINARY_CLOUD_NAME,
+    api_key: CLOUDINARY_API_KEY,
+    api_secret: CLOUDINARY_API_SECRET,
+  })
+
+  const filename = buildFilename(buffer, originalName)
+  const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: CLOUDINARY_FOLDER || 'blog/uploads', public_id: filename.replace(/\.[^.]+$/, '') },
+      (err, res) => (err || !res ? reject(err || new Error('Cloudinary upload failed')) : resolve(res)),
+    )
+    stream.end(buffer)
+  })
+
+  return { url: result.secure_url, path: result.public_id, filename }
 }

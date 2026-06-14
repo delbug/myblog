@@ -39,6 +39,8 @@ export default defineNuxtConfig({
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       siteName: process.env.NUXT_PUBLIC_SITE_NAME || 'My Blog',
       siteDescription: process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '一个支持 SEO 的个人技术博客',
+      gaId: process.env.NUXT_PUBLIC_GA_ID || '',
+      baiduTongjiId: process.env.NUXT_PUBLIC_BAIDU_TONGJI_ID || '',
     },
   },
 
@@ -63,12 +65,13 @@ export default defineNuxtConfig({
     preset: 'node-server',
   },
 
-  // ISR：热门页面增量静态渲染，提升性能
+  // ISR：高流量页面增量静态渲染（SWR 模式）
   routeRules: {
-    '/': { isr: 600 },
-    '/posts/**': { isr: 3600 },
-    '/categories/**': { isr: 3600 },
-    '/tags/**': { isr: 3600 },
+    '/': { isr: 600, swr: true },
+    '/posts/**': { isr: 3600, swr: true },
+    '/categories/**': { isr: 3600, swr: true },
+    '/tags/**': { isr: 3600, swr: true },
+    '/authors/**': { isr: 1800, swr: true },
     '/api/**': { cors: true },
   },
 })

@@ -2,6 +2,7 @@ import { eq, desc, and, sql, count, inArray, isNull } from 'drizzle-orm'
 import { useDb, schema } from '../database'
 import { renderMarkdown } from './markdown'
 import { cacheGet, cacheSet } from './cache'
+import { incrementPostView, getPostViewCount } from './viewCount'
 
 const { posts, categories, tags, postTags, users, comments } = schema
 
@@ -34,6 +35,7 @@ export async function getPublishedPosts(options: {
   categorySlug?: string
   tagSlug?: string
   keyword?: string
+  authorId?: number
   orderBy?: 'latest' | 'popular'
 }) {
   const db = useDb()
@@ -68,6 +70,10 @@ export async function getPublishedPosts(options: {
     conditions.push(
       sql`(${posts.title} LIKE ${`%${options.keyword}%`} OR ${posts.summary} LIKE ${`%${options.keyword}%`} OR ${posts.content} LIKE ${`%${options.keyword}%`} OR ${posts.seoKeyword} LIKE ${`%${options.keyword}%`})`,
     )
+  }
+
+  if (options.authorId) {
+    conditions.push(eq(posts.authorId, options.authorId))
   }
 
   const whereClause = and(...conditions)
@@ -151,8 +157,9 @@ export async function getPostBySlug(slug: string, incrementView = true) {
   if (!row) return null
 
   if (incrementView) {
-    await db.update(posts).set({ viewCount: sql`${posts.viewCount} + 1` }).where(eq(posts.id, row.id))
-    row.viewCount += 1
+    row.viewCount = await incrementPostView(row.id)
+  } else {
+    row.viewCount = await getPostViewCount(row.id)
   }
 
   const postTagsList = await db

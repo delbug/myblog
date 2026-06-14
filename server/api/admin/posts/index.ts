@@ -2,8 +2,9 @@ import { eq, desc, count, and, sql, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDb, schema } from '../../../database'
 import {
-  requireAdmin, slugify, apiSuccess, parsePagination, extractSummary, renderMarkdown, writeLog, backupMarkdown, cacheDel,
+  requireAdmin, slugify, apiSuccess, parsePagination, extractSummary, renderMarkdown, writeLog, backupMarkdown, cacheDel, zodFirstError,
 } from '../../../utils'
+import { syncPostToIndex } from '../../../utils/postIndex'
 
 const { posts, postTags } = schema
 
@@ -17,6 +18,7 @@ const postSchema = z.object({
   status: z.enum(['draft', 'published']).default('draft'),
   categoryId: z.number().nullable().optional(),
   tagIds: z.array(z.number()).optional(),
+  authorId: z.number().optional(),
   isTop: z.number().optional(),
   sortOrder: z.number().optional(),
 })
@@ -51,7 +53,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const parsed = postSchema.safeParse(body)
     if (!parsed.success) {
-      throw createError({ statusCode: 400, message: parsed.error.errors[0].message })
+      throw createError({ statusCode: 400, message: zodFirstError(parsed.error) })
     }
 
     const data = parsed.data
@@ -69,7 +71,7 @@ export default defineEventHandler(async (event) => {
       seoKeyword: data.seoKeyword || null,
       status: data.status,
       categoryId: data.categoryId || null,
-      authorId: user.userId,
+      authorId: data.authorId || user.userId,
       isTop: data.isTop || 0,
       sortOrder: data.sortOrder || 0,
       publishedAt: data.status === 'published' ? new Date() : null,
@@ -95,6 +97,7 @@ export default defineEventHandler(async (event) => {
 
     const [created] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1)
     await cacheDel('posts:popular:1')
+    if (data.status === 'published') await syncPostToIndex(postId)
     return apiSuccess(created, '文章创建成功')
   }
 })

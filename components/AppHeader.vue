@@ -8,6 +8,7 @@
       <nav class="hidden items-center gap-6 md:flex">
         <NuxtLink to="/" class="nav-link">首页</NuxtLink>
         <NuxtLink to="/archive" class="nav-link">归档</NuxtLink>
+        <NuxtLink to="/authors" class="nav-link">作者</NuxtLink>
         <NuxtLink to="/about" class="nav-link">关于</NuxtLink>
         <NuxtLink to="/search" class="nav-link">搜索</NuxtLink>
       </nav>
@@ -37,6 +38,7 @@
       <nav class="flex flex-col gap-2">
         <NuxtLink to="/" class="nav-link" @click="mobileOpen = false">首页</NuxtLink>
         <NuxtLink to="/archive" class="nav-link" @click="mobileOpen = false">归档</NuxtLink>
+        <NuxtLink to="/authors" class="nav-link" @click="mobileOpen = false">作者</NuxtLink>
         <NuxtLink to="/about" class="nav-link" @click="mobileOpen = false">关于</NuxtLink>
         <NuxtLink to="/search" class="nav-link" @click="mobileOpen = false">搜索</NuxtLink>
         <NuxtLink v-if="!isLoggedIn" to="/login" class="nav-link" @click="mobileOpen = false">登录</NuxtLink>

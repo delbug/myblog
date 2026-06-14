@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDb, schema } from '../../../database'
-import { requireAdmin, slugify, apiSuccess, writeLog } from '../../../utils'
+import { requireAdmin, slugify, apiSuccess, writeLog, zodFirstError } from '../../../utils'
 
 const { tags } = schema
 
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   if (event.method === 'PUT') {
     const body = await readBody(event)
     const parsed = tagSchema.safeParse(body)
-    if (!parsed.success) throw createError({ statusCode: 400, message: parsed.error.errors[0].message })
+    if (!parsed.success) throw createError({ statusCode: 400, message: zodFirstError(parsed.error) })
 
     await db.update(tags).set({
       name: parsed.data.name,

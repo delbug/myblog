@@ -3,8 +3,12 @@
     <div class="grid gap-8 lg:grid-cols-3">
       <article v-if="post" class="lg:col-span-2">
         <header class="mb-8">
+          <img v-if="post.coverImage" :src="post.coverImage" :alt="post.title" class="mb-6 max-h-80 w-full rounded-xl object-cover" />
           <h1 class="text-3xl font-bold leading-tight">{{ post.title }}</h1>
           <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+            <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`" class="font-medium text-primary-600 hover:underline">
+              {{ post.author.username }}
+            </NuxtLink>
             <span>{{ formatDate(post.publishedAt || post.createdAt, 'YYYY年MM月DD日') }}</span>
             <span v-if="post.category">
               <NuxtLink :to="`/categories/${post.category.slug}`" class="text-primary-600 hover:underline">

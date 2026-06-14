@@ -150,6 +150,19 @@ export const settings = mysqlTable('settings', {
   value: text('value'),
 })
 
+/** 后台动态菜单 */
+export const adminMenus = mysqlTable('admin_menus', {
+  id: int('id').primaryKey().autoincrement(),
+  label: varchar('label', { length: 50 }).notNull(),
+  path: varchar('path', { length: 200 }).notNull(),
+  icon: varchar('icon', { length: 20 }),
+  permissionCode: varchar('permission_code', { length: 100 }),
+  sortOrder: int('sort_order').default(0).notNull(),
+  enabled: int('enabled').default(1).notNull(),
+  parentId: int('parent_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const operationLogs = mysqlTable(
   'operation_logs',
   {
@@ -225,10 +238,14 @@ export const PERMISSION_CODES = [
   { code: 'post:create', name: '创建文章', groupName: '文章' },
   { code: 'post:update', name: '编辑文章', groupName: '文章' },
   { code: 'post:delete', name: '删除文章', groupName: '文章' },
+  { code: 'post:restore', name: '恢复文章', groupName: '文章' },
+  { code: 'post:purge', name: '永久删除', groupName: '文章' },
   { code: 'category:manage', name: '分类管理', groupName: '分类' },
   { code: 'tag:manage', name: '标签管理', groupName: '标签' },
   { code: 'comment:manage', name: '评论管理', groupName: '评论' },
   { code: 'user:manage', name: '用户管理', groupName: '用户' },
+  { code: 'role:manage', name: '角色权限', groupName: '用户' },
+  { code: 'menu:manage', name: '菜单管理', groupName: '系统' },
   { code: 'setting:manage', name: '站点设置', groupName: '系统' },
   { code: 'log:view', name: '查看日志', groupName: '系统' },
 ] as const

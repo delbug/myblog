@@ -2,8 +2,10 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDb, schema } from '../../../database'
 import {
-  requireAdmin, slugify, apiSuccess, extractSummary, renderMarkdown, writeLog, backupMarkdown, cacheDel,
+  requireAdmin, slugify, apiSuccess, extractSummary, renderMarkdown, writeLog, backupMarkdown, cacheDel, zodFirstError,
 } from '../../../utils'
+import { syncPostToIndex } from '../../../utils/postIndex'
+import { removePostFromIndex } from '../../../utils/meilisearch'
 
 const { posts, postTags } = schema
 
@@ -17,6 +19,7 @@ const updateSchema = z.object({
   status: z.enum(['draft', 'published']).optional(),
   categoryId: z.number().nullable().optional(),
   tagIds: z.array(z.number()).optional(),
+  authorId: z.number().optional(),
   isTop: z.number().optional(),
   sortOrder: z.number().optional(),
 })
@@ -44,7 +47,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const parsed = updateSchema.safeParse(body)
     if (!parsed.success) {
-      throw createError({ statusCode: 400, message: parsed.error.errors[0].message })
+      throw createError({ statusCode: 400, message: zodFirstError(parsed.error) })
     }
 
     const data = parsed.data
@@ -88,6 +91,7 @@ export default defineEventHandler(async (event) => {
     })
 
     const [updated] = await db.select().from(posts).where(eq(posts.id, id)).limit(1)
+    await syncPostToIndex(id)
     return apiSuccess(updated, '文章更新成功')
   }
 
@@ -95,6 +99,7 @@ export default defineEventHandler(async (event) => {
     // 软删除：保留数据，前台不可见
     await db.update(posts).set({ deletedAt: new Date() }).where(eq(posts.id, id))
     await cacheDel('posts:popular:1')
+    await removePostFromIndex(id)
 
     await writeLog(event, {
       userId: user.userId,

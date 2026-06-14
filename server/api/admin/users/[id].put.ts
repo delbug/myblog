@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDb, schema } from '../../../database'
-import { requireAdmin, apiSuccess, writeLog } from '../../../utils'
+import { requireAdmin, apiSuccess, writeLog, zodFirstError } from '../../../utils'
 
 const { users } = schema
 
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsed = updateSchema.safeParse(body)
   if (!parsed.success) {
-    throw createError({ statusCode: 400, message: parsed.error.errors[0].message })
+    throw createError({ statusCode: 400, message: zodFirstError(parsed.error) })
   }
 
   const db = useDb()

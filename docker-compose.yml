@@ -22,6 +22,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # Meilisearch 全文搜索
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    container_name: blog-meili
+    restart: unless-stopped
+    ports:
+      - '${MEILI_PORT:-7700}:7700'
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
+      MEILI_ENV: development
+    volumes:
+      - meili_data:/meili_data
+
   # Nuxt 博客应用
   app:
     build: .
@@ -40,9 +53,15 @@ services:
       DB_USER: ${DB_USER:-blog}
       DB_PASSWORD: ${DB_PASSWORD:-blog123}
       DB_NAME: ${DB_NAME:-blog_db}
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-dev-master-key}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
     depends_on:
       mysql:
         condition: service_healthy
+      meilisearch:
+        condition: service_started
 
 volumes:
   mysql_data:
+  meili_data:

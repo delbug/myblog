@@ -2,9 +2,8 @@ import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDb, schema } from '../../database'
-import { setAuthCookie, checkRateLimit, apiSuccess } from '../../utils/auth'
+import { setAuthCookie, checkRateLimit, apiSuccess, zodFirstError, getClientIp } from '../../utils/auth'
 import { writeLog } from '../../utils/logger'
-import { getClientIp } from '../../utils/auth'
 
 const { users } = schema
 
@@ -27,7 +26,7 @@ export default defineEventHandler(async (event) => {
   const parsed = registerSchema.safeParse(body)
 
   if (!parsed.success) {
-    throw createError({ statusCode: 400, message: parsed.error.errors[0].message })
+    throw createError({ statusCode: 400, message: zodFirstError(parsed.error) })
   }
 
   const { username, password, email } = parsed.data

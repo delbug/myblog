@@ -1,7 +1,7 @@
 import { eq, and, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDb, schema } from '../../database'
-import { getAuthUser, apiSuccess, checkRateLimit } from '../../utils'
+import { getAuthUser, apiSuccess, checkRateLimit, zodFirstError } from '../../utils'
 
 const { comments } = schema
 
@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const parsed = commentSchema.safeParse(body)
     if (!parsed.success) {
-      throw createError({ statusCode: 400, message: parsed.error.errors[0].message })
+      throw createError({ statusCode: 400, message: zodFirstError(parsed.error) })
     }
 
     const data = parsed.data

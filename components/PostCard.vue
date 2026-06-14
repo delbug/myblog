@@ -1,5 +1,7 @@
 <template>
   <article class="card transition-shadow hover:shadow-md">
+    <img v-if="post.coverImage" :src="post.coverImage" :alt="post.title" class="mb-3 max-h-48 w-full rounded-lg object-cover" />
+
     <div v-if="post.isTop" class="mb-2">
       <span class="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400">置顶</span>
     </div>
@@ -15,6 +17,9 @@
     </p>
 
     <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+      <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`" class="hover:text-primary-600">
+        {{ post.author.username }}
+      </NuxtLink>
       <span>{{ formatDate(post.publishedAt || post.createdAt) }}</span>
       <span v-if="post.category">
         <NuxtLink :to="`/categories/${post.category.slug}`" class="hover:text-primary-600">
@@ -52,6 +57,8 @@ defineProps<{
     createdAt: string
     category: { id: number; name: string; slug: string } | null
     tags: { id: number; name: string; slug: string }[]
+    author?: { id: number; username: string; avatar: string | null }
+    coverImage?: string | null
   }
 }>()
 </script>

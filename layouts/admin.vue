@@ -50,26 +50,31 @@
 const collapsed = ref(false)
 const { user, logout: authLogout, fetchUser } = useAuth()
 const { fetchPermissions } = usePermission()
+const { menus, fetchMenus } = useAdminMenu()
 const { openTab } = useAdminTabs()
 const route = useRoute()
 
-const navItems = [
+/** 动态菜单（API 失败时使用静态兜底） */
+const fallbackNav = [
   { to: '/admin', label: '仪表盘', icon: '📊' },
   { to: '/admin/posts', label: '文章管理', icon: '📝' },
-  { to: '/admin/posts/new', label: '写文章', icon: '✏️' },
-  { to: '/admin/categories', label: '分类管理', icon: '📁' },
-  { to: '/admin/tags', label: '标签管理', icon: '🏷️' },
-  { to: '/admin/comments', label: '评论管理', icon: '💬' },
-  { to: '/admin/users', label: '用户管理', icon: '👥' },
-  { to: '/admin/logs', label: '操作日志', icon: '📋' },
+  { to: '/admin/posts/trash', label: '回收站', icon: '🗑️' },
   { to: '/admin/settings', label: '站点设置', icon: '⚙️' },
 ]
 
+const navItems = computed(() => {
+  if (menus.value.length) {
+    return menus.value.map((m) => ({ to: m.path, label: m.label, icon: m.icon || '📄' }))
+  }
+  return fallbackNav
+})
+
 await fetchUser()
 await fetchPermissions()
+await fetchMenus()
 
 watch(() => route.path, () => {
-  const item = navItems.find((n) => n.to === route.path)
+  const item = navItems.value.find((n) => n.to === route.path)
   if (item) openTab(item.label, item.to)
 }, { immediate: true })
 

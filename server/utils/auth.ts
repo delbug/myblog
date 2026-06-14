@@ -69,6 +69,11 @@ export function getClientIp(event: H3Event): string {
     || 'unknown'
 }
 
+/** Zod 校验失败时的首条错误信息（Zod 4 使用 issues） */
+export function zodFirstError(error: { issues: Array<{ message: string }> }): string {
+  return error.issues[0]?.message ?? '参数校验失败'
+}
+
 /** 将字符串转为 URL 友好的 slug */
 export function slugify(text: string): string {
   return text

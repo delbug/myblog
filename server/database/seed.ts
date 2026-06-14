@@ -146,6 +146,18 @@ console.log(posts.value)
   await seedPermissions()
   console.log('✅ 权限数据就绪')
 
+  const { seedAdminMenus } = await import('../utils/menus')
+  await seedAdminMenus()
+  console.log('✅ 后台菜单就绪')
+
+  const { rebuildPostIndex } = await import('../utils/postIndex')
+  try {
+    const { indexed } = await rebuildPostIndex()
+    if (indexed > 0) console.log(`✅ 搜索索引就绪 (${indexed} 篇)`)
+  } catch {
+    console.log('ℹ️  Meilisearch 未配置，跳过索引')
+  }
+
   console.log('🎉 种子数据填充完成！')
   process.exit(0)
 }
