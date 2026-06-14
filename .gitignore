@@ -1,0 +1,29 @@
+# Nuxt
+.nuxt
+.output
+.data
+dist
+
+# Node
+node_modules
+*.log
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Markdown 备份
+storage/articles/
+
+# PM2 日志
+logs/

@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: blog_db
+          MYSQL_USER: blog
+          MYSQL_PASSWORD: blog123
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Setup env
+        run: cp .env.example .env
+
+      - name: Push DB schema
+        run: npm run db:push
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: blog
+          DB_PASSWORD: blog123
+          DB_NAME: blog_db
+
+      - run: npm run test
+      - run: npm run build

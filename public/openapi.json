@@ -1,0 +1,13 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Vue Blog API", "version": "2.0.0", "description": "Nuxt3 + MySQL 个人博客 API" },
+  "servers": [{ "url": "http://localhost:3000" }],
+  "paths": {
+    "/api/posts": { "get": { "summary": "文章列表", "tags": ["文章"] } },
+    "/api/posts/{slug}": { "get": { "summary": "文章详情", "tags": ["文章"] } },
+    "/api/search": { "get": { "summary": "全文搜索", "tags": ["文章"] } },
+    "/api/auth/login": { "post": { "summary": "登录", "tags": ["认证"] } },
+    "/api/auth/register": { "post": { "summary": "注册", "tags": ["认证"] } },
+    "/api/upload/image": { "post": { "summary": "图片上传", "tags": ["上传"] } }
+  }
+}

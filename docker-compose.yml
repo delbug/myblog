@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: blog-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root123}
+      MYSQL_DATABASE: ${DB_NAME:-blog_db}
+      MYSQL_USER: ${DB_USER:-blog}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-blog123}
+    ports:
+      - '${DB_PORT:-3306}:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nuxt 博客应用
+  app:
+    build: .
+    container_name: blog-app
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    environment:
+      NODE_ENV: production
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      NUXT_PUBLIC_SITE_NAME: ${NUXT_PUBLIC_SITE_NAME:-My Blog}
+      NUXT_PUBLIC_SITE_DESCRIPTION: ${NUXT_PUBLIC_SITE_DESCRIPTION:-一个支持 SEO 的个人技术博客}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-blog}
+      DB_PASSWORD: ${DB_PASSWORD:-blog123}
+      DB_NAME: ${DB_NAME:-blog_db}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
