@@ -62,7 +62,7 @@
 | **Nuxt** | 4.x | 基于 Vue 的全栈框架 | 文件路由、SSR、API 路由、构建部署一条龙 |
 | **Vue 3** | 3.5+ | 前端 UI 框架 | 所有 `.vue` 页面和组件，用 Composition API（`ref`、`computed`、`setup`） |
 | **Nitro** | Nuxt 内置 | Node.js 服务端引擎 | 运行 `server/` 下的 API，生产环境打包成 `.output/server` |
-| **TypeScript** | 5.x | 带类型的 JavaScript | 全项目 `.ts` / `.vue`，减少拼写和类型错误 |
+| **TypeScript** | 6.x | 带类型的 JavaScript | 全项目 `.ts` / `.vue`，减少拼写和类型错误 |
 
 **新人要点**：在 Nuxt 里，你写页面不用配路由表——`pages/about.vue` 自动对应 `/about`。
 
@@ -88,7 +88,7 @@
 | **MySQL** | 关系型数据库 | 存用户、文章、评论、分类、标签等 |
 | **Drizzle ORM** | TypeScript ORM | `server/database/schema.ts` 定义表结构，API 里用类型安全的查询 |
 | **mysql2** | MySQL 驱动 | Drizzle 底层连接数据库 |
-| **Zod** | 数据校验库 | API 收到请求体后校验格式，如登录用户名不能为空 |
+| **Zod** | 4.x 数据校验库 | API 收到请求体后校验格式；错误信息用 `zodFirstError()` |
 | **bcryptjs** | 密码加密 | 注册时哈希密码，登录时比对 |
 | **jsonwebtoken (JWT)** | 令牌 | 登录成功后签发 token，写入 HttpOnly Cookie |
 
@@ -108,7 +108,11 @@
 | **@vueuse/core** | Vue 工具集 | 部分组件可能用到响应式工具 |
 | **dayjs** | 日期格式化 | `utils/format.ts` 里格式化发布时间 |
 | **Vitest** | 单元测试 | `tests/utils.test.ts` |
-| **ioredis**（可选） | Redis 客户端 | 配置了 `REDIS_URL` 时用于缓存热门文章 |
+| **Playwright** | E2E 测试 | `e2e/blog.spec.ts`，`npm run test:e2e` |
+| **Meilisearch** | 全文搜索引擎 | `server/utils/meilisearch.ts`，未配置时回退 MySQL |
+| **TipTap / Vditor** | 富文本 / Markdown 编辑器 | `ArticleEditor.vue` 双模式写作 |
+| **ioredis**（可选） | Redis 客户端 | 热门文章缓存 + 阅读量缓冲（`viewCount.ts`） |
+| **cloudinary / ali-oss / qiniu** | 对象存储 SDK | `server/utils/storage.ts` 多驱动图床 |
 
 ---
 
@@ -132,19 +136,24 @@ demo-vuessr/
 ├── composables/           # 【组合式函数】类似 React Hooks，全局复用逻辑
 │   ├── useAuth.ts         #   登录状态
 │   ├── useSeo.ts          #   SEO Meta
-│   └── usePermission.ts   #   权限码
+│   ├── usePermission.ts   #   权限码
+│   ├── useAdminMenu.ts    #   动态后台菜单
+│   └── useAdminTabs.ts    #   多页签
 ├── middleware/            # 【路由守卫】进入页面前执行
 │   └── admin-auth.ts      #   后台必须 admin 登录
 ├── plugins/               # 【插件】扩展 Vue
-│   └── auth-directive.client.ts  # v-auth 按钮权限指令
+│   ├── auth-directive.ts      # v-auth 按钮权限（含 SSR getSSRProps）
+│   └── analytics.client.ts    # GA + 百度统计
 ├── assets/css/            # 全局 CSS
 ├── utils/                 # 纯前端工具（如 formatDate）
 ├── server/                # 【后端代码】只在服务端运行
 │   ├── api/               #   REST API，/api/* 自动映射
 │   ├── database/          #   表结构、连接、种子数据
 │   ├── routes/            #   自定义路由（如 /rss.xml）
-│   ├── utils/             #   服务端工具（auth、markdown、post 查询等）
+│   ├── utils/             #   服务端工具（auth、markdown、post、storage、meilisearch 等）
+│   ├── scripts/           #   CLI（search:reindex）
 │   └── middleware/        #   服务端中间件（请求日志）
+├── e2e/                   # Playwright E2E 测试
 ├── public/                # 静态文件，原样对外提供
 ├── nuxt.config.ts         # Nuxt 总配置
 └── docs/                  # 文档
@@ -203,7 +212,8 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 | 文章详情 | `/posts/:slug` | Markdown 渲染、点赞收藏、评论、相关文章 |
 | 分类列表 | `/categories/:slug` | 某分类下的文章 |
 | 标签列表 | `/tags/:slug` | 某标签下的文章 |
-| 搜索 | `/search?keyword=` | 标题 + 正文关键词搜索 |
+| 搜索 | `/search?keyword=` | Meilisearch 全文搜索（未配置则 MySQL LIKE） |
+| 作者列表 / 详情 | `/authors`、`/authors/:username` | 多作者及其文章 |
 | 归档 | `/archive` | 按年月分组的时间线 |
 | 关于 | `/about` | 站点介绍（内容来自 settings 表） |
 | 登录 / 注册 | `/login`、`/register` | 普通用户账号 |
@@ -219,15 +229,19 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 |------|------|------|
 | 登录 | `/admin/login` | 仅 admin 角色可进后台 |
 | 仪表盘 | `/admin` | 文章 / 评论统计 |
-| 文章管理 | `/admin/posts` | 列表、编辑、删除 |
-| 写文章 | `/admin/posts/new` | Markdown 编辑器 |
+| 文章管理 | `/admin/posts` | 列表、编辑、软删除 |
+| 回收站 | `/admin/posts/trash` | 恢复 / 永久删除 |
+| 写文章 | `/admin/posts/new` | Vditor + TipTap 双模式编辑器 |
 | 分类 / 标签 | `/admin/categories`、`/admin/tags` | CRUD |
 | 评论审核 | `/admin/comments` | 通过 / 拒绝 / 删除 |
-| 用户管理 | `/admin/users` | 禁用用户等 |
-| 站点设置 | `/admin/settings` | 关于页文案等 |
-| API 文档 | `/admin/api-docs` | 接口列表说明 |
+| 用户管理 | `/admin/users` | 禁用用户、角色 |
+| 角色权限 | `/admin/roles` | RBAC 权限码配置 |
+| 菜单管理 | `/admin/menus` | 动态侧栏菜单 |
+| 操作日志 | `/admin/logs` | 登录、删文等审计 |
+| 站点设置 | `/admin/settings` | 关于页、GA、百度统计、重建搜索索引 |
+| API 文档 | `/admin/api-docs` | Scalar 嵌入 OpenAPI |
 
-后台页面统一使用 `layouts/admin.vue`，并通过 `middleware/admin-auth.ts` 拦截未登录或非 admin 用户。
+后台页面统一使用 `layouts/admin.vue`（**动态侧栏**来自 `useAdminMenu` + `/api/admin/menus`），并通过 `middleware/admin-auth.ts` 拦截未登录或非 admin 用户。
 
 ---
 
@@ -293,21 +307,18 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 **写作（后台）**
 
 - 页面：`pages/admin/posts/new.vue`、`pages/admin/posts/[id].vue`
-- 编辑器：`components/MarkdownEditor.vue`
-  - 工具栏插入 Markdown 语法
-  - 支持编辑 / 预览 / 分屏
-  - 图片上传：选文件 → `POST /api/upload/image` → 插入 `![](url)`
+- 编辑器：`components/ArticleEditor.vue`（Vditor / TipTap 切换）
+  - `components/MarkdownEditor.vue` — Vditor 封装
+  - `components/TipTapEditor.vue` — 富文本，Turndown 转 Markdown
+- 封面：`components/ImageUpload.vue` → `POST /api/upload/image`
+- 可选指定 **作者**（`authorId`），默认当前登录用户
 
 **渲染（服务端）**
 
-- `server/utils/markdown.ts`
-  - `markdown-it` + `highlight.js` 代码高亮
-  - `markdown-it-anchor` 给标题加锚点
-- 发布文章时，API 把 `content`（Markdown）转成 `contentHtml` 存入数据库
+- `server/utils/markdown.ts` — markdown-it + highlight.js + anchor
+- 发布时 API 将 `content` 转为 `contentHtml` 存库
 
-**前台预览**
-
-- `composables/useMarkdownPreview.ts` — 编辑器预览区用
+**前台预览**：`composables/useMarkdownPreview.ts`
 
 ---
 
@@ -341,12 +352,14 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 
 **页面**：`pages/search.vue`
 
+**接口**：`GET /api/search?keyword=` → `server/api/search.get.ts`
+
 **实现**
 
-- 输入关键词 → 调 `/api/posts?keyword=xxx`
-- 后端在 `getPublishedPosts` 里用 SQL `LIKE` 匹配标题、摘要、正文、SEO 关键词
-
-> 当前是 MySQL 简单搜索，不是 Elasticsearch。数据量大时会慢，这是已知可扩展点。
+1. 若配置了 Meilisearch（`MEILISEARCH_HOST`）→ `server/utils/meilisearch.ts` 的 `searchPostsMeili()`
+2. 否则回退 `getPublishedPosts({ keyword })`（MySQL LIKE）
+3. 文章 CRUD 时通过 `server/utils/postIndex.ts` 的 `syncPostToIndex()` 同步索引
+4. 全量重建：`POST /api/admin/search/reindex` 或 `npm run search:reindex`
 
 ---
 
@@ -365,7 +378,7 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 **组件**
 
 - `components/CommentSection.vue` — 评论表单 + 列表
-- `components/CommentItem.vue` — 单条评论 + 嵌套回复
+- `components/CommentItem.vue` — 单条评论 + **嵌套回复**（depth 缩进、@ 回复名）
 
 **流程**
 
@@ -391,7 +404,8 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 **前端状态**：`composables/useAuth.ts`
 
 - 用 `useState('auth-user')` 存当前用户（Nuxt 提供的 SSR 友好全局状态）
-- `login()` / `register()` / `logout()` / `fetchUser()` 封装 `$fetch`
+- `login()` / `register()` / `logout()` 封装 `$fetch`
+- `fetchUser()` 使用 `$fetch`（避免 mounted 后 `useFetch` 警告）
 
 **接口**
 
@@ -426,7 +440,7 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 **前端**
 
 - `composables/usePermission.ts` — 拉取 `/api/auth/permissions`
-- `plugins/auth-directive.client.ts` — 自定义指令 `v-auth="'post:delete'"`，无权限则隐藏按钮
+- `plugins/auth-directive.ts` — 指令 `v-auth="'post:delete'"`（须含 `getSSRProps`，否则 SSR 报错）
 
 **服务端**
 
@@ -453,7 +467,7 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 **页面**
 
 - 关于：`pages/about.vue` — 读 `/api/settings` 里 `about` 键
-- 后台：`pages/admin/settings/index.vue` — 修改 settings
+- 后台：`pages/admin/settings/index.vue` — 含 GA / 百度统计 ID、Meilisearch 重建按钮
 
 **数据库**：`settings` 表，key-value 结构（如 `about`、`site_title`）。
 
@@ -476,9 +490,13 @@ API 统一返回格式（见 `server/utils/auth.ts` 的 `apiSuccess` / `apiError
 - 模块 `@nuxtjs/sitemap` 在 `nuxt.config.ts` 配置
 - 动态 URL：`server/api/__sitemap__/urls.get.ts` 返回所有已发布文章链接
 
-**ISR 缓存**
+**ISR / SWR**
 
-- `nuxt.config.ts` 的 `routeRules`：首页和文章页设置 ISR，减轻服务器压力
+- `nuxt.config.ts` 的 `routeRules`：首页、文章、分类、标签、**作者页** 等设置 `isr` + `swr`
+
+**访问统计**
+
+- `plugins/analytics.client.ts` — 读取 settings 或 `.env` 中的 GA / 百度统计 ID
 
 ---
 
@@ -501,8 +519,7 @@ Tailwind 的 `dark:` 前缀类会自动跟随 `<html class="dark">`。
 
 **布局**：`layouts/admin.vue`
 
-- 左侧导航 + 顶栏 + `AdminTabs` 多标签页
-- `composables/useAdminTabs.ts` 管理打开的标签
+- 左侧 **动态导航**（`composables/useAdminMenu.ts`）+ 顶栏 + `AdminTabs` 多标签页
 
 **通用组件**
 
@@ -517,27 +534,59 @@ Tailwind 的 `dark:` 前缀类会自动跟随 `<html class="dark">`。
 
 - `GET/POST /api/admin/posts` → `server/api/admin/posts/index.ts`
 - `GET/PUT/DELETE /api/admin/posts/:id` → `server/api/admin/posts/[id].ts`
+- 回收站：`GET /api/admin/posts/trash`，`POST .../restore`，`DELETE .../permanent`
 
 ---
 
-### 7.15 图片上传
+### 7.15 图片上传与图床
 
 **接口**：`POST /api/upload/image` → `server/api/upload/image.post.ts`
 
 **存储**：`server/utils/storage.ts`
 
-- 默认存本地 `public/uploads/`
-- 可配置 `STORAGE_DRIVER` 扩展 OSS 等
+| `STORAGE_DRIVER` | 说明 |
+|------------------|------|
+| `local` | 默认，`public/uploads/` |
+| `aliyun` | 阿里云 OSS |
+| `qiniu` | 七牛云 |
+| `cloudinary` | Cloudinary 图床 |
+
+未配置密钥时自动回退本地。
 
 ---
 
-### 7.16 操作日志
+### 7.16 阅读量缓冲
 
-**数据库**：`operation_logs` 表
+- `server/utils/viewCount.ts` — Redis `INCR` 缓冲，批量写回 MySQL
+- `getPostBySlug` 展示阅读量 = DB 值 + Redis 增量
+- 依赖 `REDIS_URL`；无 Redis 时用 `server/utils/cache.ts` 内存降级
 
-**写入**：登录、删文章等操作调用 `server/utils/logger.ts` 的 `writeLog()`
+---
 
-> 后台导航有「操作日志」入口，对应 API 已在 `api-docs` 中列出，页面可按需补充。
+### 7.17 多作者
+
+- 前台：`pages/authors/index.vue`、`pages/authors/[username].vue`
+- API：`GET /api/authors`、`GET /api/authors/:username`
+- `getPublishedPosts({ authorId })` 按作者筛选
+- `PostCard` / 文章详情展示作者链接
+
+---
+
+### 7.18 操作日志
+
+**页面**：`pages/admin/logs/index.vue`
+
+**接口**：`GET /api/admin/logs`
+
+**写入**：`server/utils/logger.ts` 的 `writeLog()`（登录、删文等）
+
+---
+
+### 7.19 回收站
+
+- 删除文章 → 设置 `deletedAt`（软删除），同步 Meilisearch 移除
+- `pages/admin/posts/trash.vue` — 列表、恢复、永久删除
+- API：`server/api/admin/posts/trash.get.ts`、`restore.post.ts`、`permanent.delete.ts`
 
 ---
 
@@ -553,6 +602,7 @@ users ──────< posts >────── categories
   │              └──< post_favorites
 
 permissions ──< role_permissions（按 role 关联）
+admin_menus（动态后台菜单）
 
 settings（键值对，站点配置）
 ```
@@ -581,7 +631,10 @@ settings（键值对，站点配置）
 | `NUXT_PUBLIC_SITE_NAME` | 站点名称 |
 | `JWT_SECRET` | JWT 签名密钥，生产必改 |
 | `DB_*` | MySQL 连接信息 |
-| `REDIS_URL` | 可选，启用 Redis 缓存 |
+| `REDIS_URL` | 可选，缓存 + 阅读量缓冲 |
+| `MEILISEARCH_HOST` / `MEILISEARCH_API_KEY` | 可选，全文搜索 |
+| `STORAGE_DRIVER` | 图床：`local` / `aliyun` / `qiniu` / `cloudinary` |
+| `NUXT_PUBLIC_GA_ID` / `NUXT_PUBLIC_BAIDU_TONGJI_ID` | 统计（可被 settings 覆盖） |
 
 ---
 
@@ -597,7 +650,8 @@ settings（键值对，站点配置）
 | 改登录逻辑 | `server/api/auth/login.post.ts`、`composables/useAuth.ts` |
 | 改 SEO 规则 | `composables/useSeo.ts` |
 | 改全局样式 / 主题色 | `assets/css/main.css`、`tailwind.config.ts` |
-| 改后台菜单 | `layouts/admin.vue` 的 `navItems` |
+| 改后台菜单 | `pages/admin/menus/` 或数据库 `admin_menus` |
+| 配置图床 / 搜索 | 见 [TUTORIAL.md](./TUTORIAL.md) |
 
 ---
 
@@ -617,7 +671,8 @@ npm run dev
 | 后台 http://localhost:3000/admin/login | admin / admin123 |
 
 构建检查：`npm run build`  
-单元测试：`npm run test`
+单元测试：`npm run test`  
+E2E 测试：`npm run test:e2e`（需 dev 服务）
 
 ---
 
@@ -625,8 +680,10 @@ npm run dev
 
 | 文档 | 内容 |
 |------|------|
+| [TUTORIAL.md](./TUTORIAL.md) | 管理员使用教程（写文章、图床、搜索、权限） |
 | [STARTUP.md](./STARTUP.md) | 本地启动详细步骤 |
 | [TECH_PLAN.md](./TECH_PLAN.md) | 技术规划与 API 一览 |
+| [ROADMAP.md](./ROADMAP.md) | 功能路线图 |
 | [DEPLOY.md](./DEPLOY.md) | Docker / 生产部署 |
 | [Nuxt 4 官方文档](https://nuxt.com/docs) | 框架权威参考 |
 | [Vue 3 官方文档](https://cn.vuejs.org/) | Composition API |

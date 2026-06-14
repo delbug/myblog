@@ -16,8 +16,12 @@ export function useAuth() {
 
   /** 拉取当前登录用户 */
   async function fetchUser() {
-    const { data } = await useFetch('/api/auth/me')
-    user.value = data.value?.data || null
+    try {
+      const res = await $fetch<{ data: typeof user.value }>('/api/auth/me')
+      user.value = res.data || null
+    } catch {
+      user.value = null
+    }
     return user.value
   }
 

@@ -1,37 +1,55 @@
 <template>
   <div>
-    <AdminBreadcrumb :items="[{ label: '分类管理' }]" />
+    <AdminPageHeader title="分类管理" :breadcrumb="[{ label: '分类管理' }]">
+      <template #extra>
+        <a-button type="primary" @click="showForm = !showForm">{{ showForm ? '取消' : '新建分类' }}</a-button>
+      </template>
+    </AdminPageHeader>
 
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold">分类管理</h1>
-      <button class="btn-primary" @click="showForm = !showForm">{{ showForm ? '取消' : '新建分类' }}</button>
-    </div>
+    <a-card v-if="showForm" class="mb-4">
+      <a-form layout="vertical" @finish="create">
+        <a-row :gutter="16">
+          <a-col :span="8">
+            <a-form-item label="分类名称" required>
+              <a-input v-model:value="newCat.name" placeholder="分类名称" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
+            <a-form-item label="描述">
+              <a-input v-model:value="newCat.description" placeholder="描述" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="8">
+            <a-form-item label="父分类">
+              <a-select v-model:value="newCat.parentId" allow-clear placeholder="顶级分类">
+                <a-select-option v-for="cat in list" :key="cat.id" :value="cat.id">{{ cat.name }}</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-button type="primary" html-type="submit">创建</a-button>
+      </a-form>
+    </a-card>
 
-    <form v-if="showForm" class="card mb-6 grid gap-3 sm:grid-cols-2">
-      <input v-model="newCat.name" class="input" placeholder="分类名称" required />
-      <input v-model="newCat.description" class="input" placeholder="描述" />
-      <select v-model="newCat.parentId" class="input">
-        <option :value="null">顶级分类</option>
-        <option v-for="cat in list" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-      </select>
-      <button type="button" class="btn-primary" @click="create">创建</button>
-    </form>
-
-    <div class="card space-y-2">
-      <div v-for="cat in tree" :key="cat.id" class="border-b py-2 dark:border-gray-700">
-        <div class="flex items-center justify-between">
-          <span :style="{ paddingLeft: `${cat.depth * 20}px` }">
-            {{ cat.depth > 0 ? '└ ' : '' }}{{ cat.name }}
-            <span class="text-xs text-gray-400">({{ cat.slug }})</span>
+    <a-table :columns="tableColumns" :data-source="tree" row-key="id" size="middle" bordered :pagination="false">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <span :style="{ paddingLeft: `${record.depth * 20}px` }">
+            {{ record.depth > 0 ? '└ ' : '' }}{{ record.name }}
+            <a-typography-text type="secondary" class="ml-2">({{ record.slug }})</a-typography-text>
           </span>
-          <button class="text-red-500 text-sm hover:underline" @click="remove(cat.id)">删除</button>
-        </div>
-      </div>
-    </div>
+        </template>
+        <template v-else-if="column.key === 'actions'">
+          <a-button type="link" size="small" danger @click="remove(record.id)">删除</a-button>
+        </template>
+      </template>
+    </a-table>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Modal, message } from 'ant-design-vue'
+
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 
 const showForm = ref(false)
@@ -39,11 +57,14 @@ const newCat = reactive({ name: '', description: '', parentId: null as number | 
 const { data, refresh } = await useFetch('/api/categories')
 const list = computed(() => data.value?.data || [])
 
-/** 构建分类树（带 depth） */
+const tableColumns = [
+  { title: '分类', key: 'name' },
+  { title: '操作', key: 'actions', width: 100 },
+]
+
 const tree = computed(() => {
   const items = list.value as Array<{ id: number; name: string; slug: string; parentId: number | null }>
   const result: Array<{ id: number; name: string; slug: string; depth: number }> = []
-
   function walk(parentId: number | null, depth: number) {
     for (const cat of items.filter((c) => c.parentId === parentId)) {
       result.push({ id: cat.id, name: cat.name, slug: cat.slug, depth })
@@ -60,12 +81,19 @@ async function create() {
   newCat.description = ''
   newCat.parentId = null
   showForm.value = false
+  message.success('分类已创建')
   refresh()
 }
 
-async function remove(id: number) {
-  if (!confirm('确定删除？')) return
-  await $fetch(`/api/admin/categories/${id}`, { method: 'DELETE' })
-  refresh()
+function remove(id: number) {
+  Modal.confirm({
+    title: '删除分类？',
+    okType: 'danger',
+    onOk: async () => {
+      await $fetch(`/api/admin/categories/${id}`, { method: 'DELETE' })
+      message.success('已删除')
+      refresh()
+    },
+  })
 }
 </script>

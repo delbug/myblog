@@ -1,0 +1,26 @@
+/* 后台 Ant Design 微调（仅 admin 布局引入 reset.css 后生效） */
+.admin-app .ant-layout {
+  min-height: 100vh;
+}
+
+.admin-app .admin-content {
+  margin: 16px;
+  padding: 20px 24px;
+  background: #fff;
+  border-radius: 8px;
+  min-height: calc(100vh - 112px);
+}
+
+.admin-app .admin-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f5ff 0%, #f6ffed 100%);
+}
+
+.admin-app .admin-login-card {
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}

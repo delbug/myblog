@@ -1,73 +1,76 @@
 <template>
   <div>
-    <h1 class="mb-6 text-2xl font-bold">评论管理</h1>
+    <AdminPageHeader title="评论管理" :breadcrumb="[{ label: '评论管理' }]" />
 
-    <div class="card overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead>
-          <tr class="border-b border-gray-200 dark:border-gray-700">
-            <th class="p-3">文章</th>
-            <th class="p-3">昵称</th>
-            <th class="p-3">内容</th>
-            <th class="p-3">状态</th>
-            <th class="p-3">时间</th>
-            <th class="p-3">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="comment in comments" :key="comment.id" class="border-b border-gray-100 dark:border-gray-800">
-            <td class="p-3 max-w-[120px] truncate">{{ comment.postTitle }}</td>
-            <td class="p-3">{{ comment.authorName }}</td>
-            <td class="p-3 max-w-[200px] truncate">{{ comment.content }}</td>
-            <td class="p-3">
-              <span
-                class="rounded px-2 py-0.5 text-xs"
-                :class="{
-                  'bg-yellow-100 text-yellow-700': comment.status === 'pending',
-                  'bg-green-100 text-green-700': comment.status === 'approved',
-                  'bg-red-100 text-red-700': comment.status === 'rejected',
-                }"
-              >
-                {{ statusLabel(comment.status) }}
-              </span>
-            </td>
-            <td class="p-3">{{ formatDate(comment.createdAt) }}</td>
-            <td class="p-3 space-x-2">
-              <button v-if="comment.status !== 'approved'" class="text-green-600 hover:underline" @click="updateStatus(comment.id, 'approved')">通过</button>
-              <button v-if="comment.status !== 'rejected'" class="text-yellow-600 hover:underline" @click="updateStatus(comment.id, 'rejected')">拒绝</button>
-              <button class="text-red-500 hover:underline" @click="remove(comment.id)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <a-table
+      :columns="tableColumns"
+      :data-source="comments"
+      :row-key="(r: Record<string, unknown>) => r.id"
+      size="middle"
+      bordered
+      :pagination="false"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <a-tag :color="statusColor(String(record.status))">{{ statusLabel(String(record.status)) }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'createdAt'">
+          {{ formatDate(String(record.createdAt)) }}
+        </template>
+        <template v-else-if="column.key === 'actions'">
+          <a-space>
+            <a-button v-if="record.status !== 'approved'" type="link" size="small" @click="updateStatus(Number(record.id), 'approved')">通过</a-button>
+            <a-button v-if="record.status !== 'rejected'" type="link" size="small" @click="updateStatus(Number(record.id), 'rejected')">拒绝</a-button>
+            <a-button type="link" size="small" danger @click="remove(Number(record.id))">删除</a-button>
+          </a-space>
+        </template>
+      </template>
+      <template #emptyText><a-empty description="暂无评论" /></template>
+    </a-table>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Modal, message } from 'ant-design-vue'
 import { formatDate } from '~/utils/format'
 
-/** 评论审核管理页 */
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
+
+const tableColumns = [
+  { title: '文章', dataIndex: 'postTitle', key: 'postTitle', ellipsis: true, width: 140 },
+  { title: '昵称', dataIndex: 'authorName', key: 'authorName', width: 100 },
+  { title: '内容', dataIndex: 'content', key: 'content', ellipsis: true },
+  { title: '状态', key: 'status', width: 100 },
+  { title: '时间', key: 'createdAt', width: 120 },
+  { title: '操作', key: 'actions', width: 200, fixed: 'right' as const },
+]
 
 const { data, refresh } = await useFetch('/api/admin/comments')
 const comments = computed(() => data.value?.data || [])
 
-/** 状态中文标签 */
 function statusLabel(status: string) {
-  return { pending: '待审核', approved: '已通过', rejected: '已拒绝' }[status] || status
+  return ({ pending: '待审核', approved: '已通过', rejected: '已拒绝' })[status] || status
 }
 
-/** 更新评论审核状态 */
+function statusColor(status: string) {
+  return ({ pending: 'warning', approved: 'success', rejected: 'error' })[status] || 'default'
+}
+
 async function updateStatus(id: number, status: string) {
   await $fetch(`/api/admin/comments/${id}`, { method: 'PUT', body: { status } })
+  message.success('状态已更新')
   refresh()
 }
 
-/** 删除评论 */
-async function remove(id: number) {
-  if (!confirm('确定删除这条评论？')) return
-  await $fetch(`/api/admin/comments/${id}`, { method: 'DELETE' })
-  refresh()
+function remove(id: number) {
+  Modal.confirm({
+    title: '删除评论？',
+    okType: 'danger',
+    onOk: async () => {
+      await $fetch(`/api/admin/comments/${id}`, { method: 'DELETE' })
+      message.success('已删除')
+      refresh()
+    },
+  })
 }
 </script>

@@ -1,17 +1,24 @@
 <template>
-  <div v-if="locked" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/90">
-    <form class="card w-full max-w-sm space-y-4" @submit.prevent="unlock">
-      <h2 class="text-center text-xl font-bold">🔒 屏幕已锁定</h2>
-      <p class="text-center text-sm text-gray-500">输入密码解锁</p>
-      <input v-model="password" class="input" type="password" autofocus />
-      <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
-      <button type="submit" class="btn-primary w-full">解锁</button>
-    </form>
-  </div>
+  <a-modal
+    v-model:open="locked"
+    title="屏幕已锁定"
+    :closable="false"
+    :mask-closable="false"
+    :footer="null"
+    centered
+  >
+    <a-typography-paragraph type="secondary">长时间无操作，请输入密码解锁</a-typography-paragraph>
+    <a-form layout="vertical" @finish="unlock">
+      <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请输入密码' }]">
+        <a-input-password v-model:value="password" autofocus />
+      </a-form-item>
+      <a-alert v-if="error" type="error" :message="error" show-icon class="mb-3" />
+      <a-button type="primary" html-type="submit" block>解锁</a-button>
+    </a-form>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
-/** 后台锁屏：30 分钟无操作自动锁定 */
 const locked = ref(false)
 const password = ref('')
 const error = ref('')
@@ -23,7 +30,6 @@ function resetTimer() {
   timer = setTimeout(() => { locked.value = true }, IDLE_MS)
 }
 
-/** 解锁（复用登录密码验证） */
 async function unlock() {
   error.value = ''
   try {

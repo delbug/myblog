@@ -14,10 +14,10 @@ test.describe('前台', () => {
 
 test.describe('后台', () => {
   test('管理员可登录后台', async ({ page }) => {
-    await page.goto('/admin/login')
-    await page.fill('input[type="text"], input[placeholder*="用户"]', 'admin')
-    await page.fill('input[type="password"]', 'admin123')
-    await page.click('button[type="submit"]')
+    await page.goto('/admin/login', { waitUntil: 'networkidle' })
+    await page.getByLabel('用户名').fill('admin')
+    await page.getByLabel('密码').fill('admin123')
+    await page.getByRole('button', { name: '登 录' }).click()
     await page.waitForURL(/\/admin(\/)?$/, { timeout: 15_000 })
     await expect(page.locator('body')).toContainText('Blog Admin')
   })

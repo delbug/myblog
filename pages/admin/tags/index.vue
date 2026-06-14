@@ -1,31 +1,36 @@
 <template>
   <div>
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold">标签管理</h1>
-      <button class="btn-primary" @click="showForm = !showForm">{{ showForm ? '取消' : '新建标签' }}</button>
-    </div>
+    <AdminPageHeader title="标签管理" :breadcrumb="[{ label: '标签管理' }]">
+      <template #extra>
+        <a-button type="primary" @click="showForm = !showForm">{{ showForm ? '取消' : '新建标签' }}</a-button>
+      </template>
+    </AdminPageHeader>
 
-    <form v-if="showForm" class="card mb-6 flex gap-3" @submit.prevent="create">
-      <input v-model="newTag.name" class="input flex-1" placeholder="标签名称" required />
-      <button type="submit" class="btn-primary">创建</button>
-    </form>
+    <a-card v-if="showForm" class="mb-4">
+      <a-form layout="inline" @finish="create">
+        <a-form-item label="标签名称" required>
+          <a-input v-model:value="newTag.name" placeholder="标签名称" style="width: 240px" />
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" html-type="submit">创建</a-button>
+        </a-form-item>
+      </a-form>
+    </a-card>
 
-    <div class="card">
-      <div class="flex flex-wrap gap-2">
-        <span
-          v-for="tag in list"
-          :key="tag.id"
-          class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-sm dark:bg-gray-700"
-        >
+    <a-card>
+      <a-space wrap>
+        <a-tag v-for="tag in list" :key="tag.id" closable @close.prevent="remove(tag.id)">
           #{{ tag.name }}
-          <button class="text-red-400 hover:text-red-600" @click="remove(tag.id)">×</button>
-        </span>
-      </div>
-    </div>
+        </a-tag>
+        <a-empty v-if="!list.length" description="暂无标签" />
+      </a-space>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Modal, message } from 'ant-design-vue'
+
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 
 const showForm = ref(false)
@@ -37,12 +42,19 @@ async function create() {
   await $fetch('/api/tags', { method: 'POST', body: newTag })
   newTag.name = ''
   showForm.value = false
+  message.success('标签已创建')
   refresh()
 }
 
-async function remove(id: number) {
-  if (!confirm('确定删除该标签？')) return
-  await $fetch(`/api/admin/tags/${id}`, { method: 'DELETE' })
-  refresh()
+function remove(id: number) {
+  Modal.confirm({
+    title: '删除标签？',
+    okType: 'danger',
+    onOk: async () => {
+      await $fetch(`/api/admin/tags/${id}`, { method: 'DELETE' })
+      message.success('已删除')
+      refresh()
+    },
+  })
 }
 </script>

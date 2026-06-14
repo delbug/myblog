@@ -1,35 +1,33 @@
 <template>
   <div>
-    <AdminBreadcrumb :items="[{ label: '角色权限' }]" />
-    <h1 class="mb-6 text-2xl font-bold">角色权限管理</h1>
+    <AdminPageHeader title="角色权限" :breadcrumb="[{ label: '角色权限' }]" />
 
-    <div v-if="pending" class="text-gray-500">加载中...</div>
-
-    <div v-else class="space-y-8">
-      <section v-for="role in roles" :key="role" class="card">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-lg font-semibold capitalize">{{ roleLabel(role) }}</h2>
-          <button class="btn-primary" :disabled="saving === role" @click="saveRole(role)">
-            {{ saving === role ? '保存中...' : '保存' }}
-          </button>
-        </div>
-
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div v-for="group in permissionGroups" :key="group.name">
-            <h3 class="mb-2 text-sm font-medium text-gray-500">{{ group.name }}</h3>
-            <label v-for="perm in group.items" :key="perm.code" class="mb-1 flex items-center gap-2 text-sm">
-              <input v-model="selected[role]" type="checkbox" :value="perm.code" />
-              {{ perm.name }}
-              <code class="text-xs text-gray-400">{{ perm.code }}</code>
-            </label>
-          </div>
-        </div>
-      </section>
-    </div>
+    <a-spin :spinning="pending">
+      <a-space direction="vertical" size="large" style="width: 100%">
+        <a-card v-for="role in roles" :key="role" :title="roleLabel(role)">
+          <template #extra>
+            <a-button type="primary" :loading="saving === role" @click="saveRole(role)">保存</a-button>
+          </template>
+          <a-row :gutter="[16, 16]">
+            <a-col v-for="group in permissionGroups" :key="group.name" :xs="24" :md="12" :xl="8">
+              <a-typography-text type="secondary" strong>{{ group.name }}</a-typography-text>
+              <a-checkbox-group v-model:value="selected[role]" class="mt-2 flex flex-col gap-1">
+                <a-checkbox v-for="perm in group.items" :key="perm.code" :value="perm.code">
+                  {{ perm.name }}
+                  <a-typography-text code class="ml-1">{{ perm.code }}</a-typography-text>
+                </a-checkbox>
+              </a-checkbox-group>
+            </a-col>
+          </a-row>
+        </a-card>
+      </a-space>
+    </a-spin>
   </div>
 </template>
 
 <script setup lang="ts">
+import { message } from 'ant-design-vue'
+
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 
 interface Permission {
@@ -76,9 +74,9 @@ async function saveRole(role: string) {
       body: { permissionCodes: selected[role] },
     })
     await refresh()
-    alert('保存成功')
+    message.success('保存成功')
   } catch (e: unknown) {
-    alert((e as { data?: { message?: string } })?.data?.message || '保存失败')
+    message.error((e as { data?: { message?: string } })?.data?.message || '保存失败')
   } finally {
     saving.value = null
   }

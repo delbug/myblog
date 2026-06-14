@@ -1,40 +1,47 @@
 <template>
-  <div class="flex min-h-screen items-center justify-center px-4">
-    <form class="card w-full max-w-md space-y-4" @submit.prevent="login">
-      <h1 class="text-center text-2xl font-bold">管理员登录</h1>
+  <a-config-provider :locale="zhCN">
+    <div class="admin-app admin-login-page">
+      <a-card class="admin-login-card" :bordered="false">
+        <div class="mb-6 text-center">
+          <a-typography-title :level="3" style="margin-bottom: 8px">Blog Admin</a-typography-title>
+          <a-typography-text type="secondary">管理员登录</a-typography-text>
+        </div>
 
-      <div>
-        <label class="mb-1 block text-sm">用户名</label>
-        <input v-model="form.username" class="input" required autocomplete="username" />
-      </div>
+        <a-form layout="vertical" :model="form" @finish="login">
+          <a-form-item label="用户名" name="username" :rules="[{ required: true, message: '请输入用户名' }]">
+            <a-input v-model:value="form.username" size="large" autocomplete="username" />
+          </a-form-item>
+          <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请输入密码' }]">
+            <a-input-password v-model:value="form.password" size="large" autocomplete="current-password" />
+          </a-form-item>
+          <a-alert v-if="error" type="error" :message="error" show-icon class="mb-4" />
+          <a-button type="primary" html-type="submit" size="large" block :loading="loading">登录</a-button>
+        </a-form>
 
-      <div>
-        <label class="mb-1 block text-sm">密码</label>
-        <input v-model="form.password" class="input" type="password" required autocomplete="current-password" />
-      </div>
-
-      <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
-
-      <button type="submit" class="btn-primary w-full" :disabled="loading">
-        {{ loading ? '登录中...' : '登录' }}
-      </button>
-
-      <p class="text-center text-xs text-gray-400">默认账号：admin / admin123</p>
-      <p class="text-center text-sm text-gray-500">
-        普通用户请 <NuxtLink to="/login" class="text-primary-600 hover:underline">前台登录</NuxtLink>
-      </p>
-    </form>
-  </div>
+        <a-typography-paragraph type="secondary" class="mt-4 text-center" style="margin-bottom: 8px">
+          默认账号：admin / admin123
+        </a-typography-paragraph>
+        <div class="text-center">
+          <a-typography-text type="secondary">普通用户请 </a-typography-text>
+          <NuxtLink to="/login"><a>前台登录</a></NuxtLink>
+        </div>
+      </a-card>
+    </div>
+  </a-config-provider>
 </template>
 
 <script setup lang="ts">
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+
+import 'ant-design-vue/dist/reset.css'
+import '~/assets/css/admin-antd.css'
+
 definePageMeta({ layout: false })
 
 const form = reactive({ username: '', password: '' })
 const loading = ref(false)
 const error = ref('')
 
-/** 提交登录，校验管理员角色 */
 async function login() {
   loading.value = true
   error.value = ''
@@ -45,7 +52,6 @@ async function login() {
       error.value = '该账号不是管理员，请使用管理员账号登录'
       return
     }
-    // 同步更新客户端 auth 状态，避免跳转后 middleware 读不到用户
     const { fetchUser } = useAuth()
     await fetchUser()
     await navigateTo('/admin')

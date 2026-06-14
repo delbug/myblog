@@ -18,6 +18,9 @@ node_modules
 .vscode
 *.swp
 
+# Vditor 静态资源（postinstall 从 node_modules 复制）
+public/vditor/
+
 # Uploads
 public/uploads/*
 !public/uploads/.gitkeep

@@ -1,26 +1,28 @@
 <template>
   <div class="article-editor">
-    <div class="mb-2 flex gap-2 text-sm">
-      <button
-        type="button"
-        class="rounded px-3 py-1"
-        :class="mode === 'vditor' ? 'bg-primary-100 text-primary-700' : 'text-gray-500'"
-        @click="mode = 'vditor'"
-      >
-        Vditor (Markdown)
-      </button>
-      <button
-        type="button"
-        class="rounded px-3 py-1"
-        :class="mode === 'tiptap' ? 'bg-primary-100 text-primary-700' : 'text-gray-500'"
-        @click="mode = 'tiptap'"
-      >
-        TipTap (可视化)
-      </button>
-    </div>
+    <a-segmented
+      v-model:value="mode"
+      class="mb-3"
+      :options="[
+        { label: 'Vditor (Markdown)', value: 'vditor' },
+        { label: 'TipTap (可视化)', value: 'tiptap' },
+      ]"
+    />
 
-    <MarkdownEditor v-if="mode === 'vditor'" :model-value="modelValue" :placeholder="placeholder" @update:model-value="emit('update:modelValue', $event)" />
-    <TipTapEditor v-else :model-value="modelValue" :placeholder="placeholder" @update:model-value="emit('update:modelValue', $event)" />
+    <MarkdownEditor
+      v-if="mode === 'vditor'"
+      :key="editorKey"
+      :model-value="modelValue"
+      :placeholder="placeholder"
+      @update:model-value="emit('update:modelValue', $event)"
+    />
+    <TipTapEditor
+      v-else
+      :key="editorKey"
+      :model-value="modelValue"
+      :placeholder="placeholder"
+      @update:model-value="emit('update:modelValue', $event)"
+    />
   </div>
 </template>
 
@@ -29,4 +31,9 @@
 defineProps<{ modelValue: string; placeholder?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const mode = ref<'vditor' | 'tiptap'>('vditor')
+const editorKey = ref(0)
+
+watch(mode, () => {
+  editorKey.value += 1
+})
 </script>

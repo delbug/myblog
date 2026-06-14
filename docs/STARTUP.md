@@ -1,33 +1,25 @@
 # 本地启动命令手册
 
-> 项目路径：`/Users/xiaojiang/web/demo-vuessr`  
-> 最后启动时间：2026-06-12  
-> 本文档记录**启动项目所需的全部命令**及**本次实际执行记录**
+> 项目路径：`demo-vuessr`  
+> 版本：2.1.0 · Nuxt 4  
+> 开发者读代码见 [ONBOARDING.md](./ONBOARDING.md)，运营使用见 [TUTORIAL.md](./TUTORIAL.md)
 
 ---
 
-## 一、日常启动（3 条命令）
-
-每次开发前，按顺序执行：
+## 一、日常启动（3 步）
 
 ```bash
-# ① 进入项目目录
-cd /Users/xiaojiang/web/demo-vuessr
-
-# ② 启动 MySQL（若已在运行可跳过）
-brew services start mysql
-
-# ③ 启动 Nuxt 开发服务器
+cd demo-vuessr
+brew services start mysql    # 未运行时；或用 Docker MySQL
 npm run dev
 ```
-
-启动成功后访问：
 
 | 页面 | 地址 |
 |------|------|
 | 博客首页 | http://localhost:3000 |
+| 作者列表 | http://localhost:3000/authors |
+| 搜索 | http://localhost:3000/search |
 | 用户登录 | http://localhost:3000/login |
-| 用户注册 | http://localhost:3000/register |
 | 管理后台 | http://localhost:3000/admin/login |
 | API 文档 | http://localhost:3000/admin/api-docs |
 
@@ -35,173 +27,145 @@ npm run dev
 
 ---
 
-## 二、首次部署到本机（完整流程）
-
-若是第一次在这台电脑上跑，需额外执行：
+## 二、首次部署到本机
 
 ```bash
-# 1. 进入项目
-cd /Users/xiaojiang/web/demo-vuessr
-
-# 2. 安装 Node 依赖
+cd demo-vuessr
 npm install
-
-# 3. 复制环境变量（.env 已存在则跳过）
 cp .env.example .env
 
-# 4. 启动 MySQL
+# MySQL（Homebrew 示例）
 brew services start mysql
-
-# 5. 创建数据库和用户（root 密码示例：123456，仅需执行一次）
-mysql -u root -p123456 -e "
+mysql -u root -p -e "
 CREATE DATABASE IF NOT EXISTS blog_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS 'blog'@'localhost' IDENTIFIED BY 'blog123';
 GRANT ALL PRIVILEGES ON blog_db.* TO 'blog'@'localhost';
 FLUSH PRIVILEGES;
 "
 
-# 6. 同步数据库表结构
 npm run db:push
-
-# 7. 填充种子数据（管理员、分类、标签、示例文章、权限）
 npm run db:seed
-
-# 8. 启动开发服务器
 npm run dev
 ```
 
 ---
 
-## 三、启动前自检命令
+## 三、可选服务
+
+### Meilisearch（全文搜索）
 
 ```bash
-# 检查 MySQL 服务状态
+docker compose up meilisearch -d
+```
+
+`.env`：
+
+```env
+MEILISEARCH_HOST=http://127.0.0.1:7700
+MEILISEARCH_API_KEY=dev-master-key
+```
+
+重建索引：
+
+```bash
+npm run search:reindex
+# 或后台「站点设置 → 重建 Meilisearch 索引」
+```
+
+### Redis（缓存 + 阅读量缓冲）
+
+```env
+REDIS_URL=redis://localhost:6379
+```
+
+未配置时使用内存缓存（开发可用）。
+
+---
+
+## 四、启动前自检
+
+```bash
 brew services list | grep mysql
-
-# 检查 blog 用户能否连接数据库
 mysql -u blog -pblog123 -e "USE blog_db; SHOW TABLES;"
-
-# 检查 3000 端口是否被占用
 lsof -i :3000
-
-# 检查 Node 版本（需 18+，推荐 20+）
-node -v
+node -v    # 推荐 20+
 ```
 
 ---
 
-## 四、停止服务
+## 五、停止服务
 
 ```bash
-# 停止开发服务器：在运行 npm run dev 的终端按 Ctrl + C
-# 或强制结束占用 3000 端口的进程：
+# dev：终端 Ctrl+C
 lsof -ti :3000 | xargs kill
 
-# 停止 MySQL（可选）
-brew services stop mysql
+brew services stop mysql   # 可选
 ```
 
 ---
 
-## 五、其他常用命令
+## 六、常用命令
 
 ```bash
-# 生产构建
-npm run build
-
-# 预览生产构建
-npm run preview
-
-# 单元测试
-npm run test
-
-# 数据库 Schema 变更后同步
-npm run db:push
-
-# 重新填充种子数据
-npm run db:seed
-
-# PM2 生产启动（需先 npm run build）
-npm run pm2:start
+npm run dev              # 开发
+npm run build            # 生产构建
+npm run preview          # 预览构建
+npm run test             # 单元测试
+npm run test:e2e         # E2E（需 dev 已启动）
+npm run search:reindex   # Meilisearch 全量索引
+npm run db:push          # 同步表结构
+npm run db:seed          # 种子数据
+npm run pm2:start        # PM2 生产
 ```
 
 ---
 
-## 六、环境配置说明（.env）
+## 七、环境配置（.env 摘要）
 
 ```env
 NUXT_PUBLIC_SITE_URL=http://localhost:3000
+JWT_SECRET=your-super-secret-jwt-key-change-me
 DB_HOST=localhost
-DB_PORT=3306
 DB_USER=blog
 DB_PASSWORD=blog123
 DB_NAME=blog_db
-JWT_SECRET=your-super-secret-jwt-key-change-me
+
+# 可选
+# REDIS_URL=redis://localhost:6379
+# MEILISEARCH_HOST=http://127.0.0.1:7700
+# MEILISEARCH_API_KEY=dev-master-key
+# STORAGE_DRIVER=local
+# NUXT_PUBLIC_GA_ID=
+# NUXT_PUBLIC_BAIDU_TONGJI_ID=
 ```
 
-| 配置项 | 值 | 说明 |
-|--------|-----|------|
-| 应用账号 | blog / blog123 | `.env` 中配置，应用连接用 |
-| MySQL root | root / 123456 | 仅管理数据库用，不在 .env 中 |
-
----
-
-## 七、2026-06-12 本次实际执行记录
-
-以下为助手在本机实际跑过的命令及结果：
-
-### 步骤 1：检查环境
-
-```bash
-brew services list 2>/dev/null | rg mysql
-lsof -i :3000
-test -d /Users/xiaojiang/web/demo-vuessr/node_modules && echo "node_modules: OK"
-```
-
-**结果：**
-- MySQL：`started` ✅
-- 3000 端口：空闲 ✅
-- `node_modules`：已存在 ✅
-
-### 步骤 2：验证数据库连接
-
-```bash
-mysql -u blog -pblog123 -e "USE blog_db; SELECT COUNT(*) AS posts FROM posts;"
-```
-
-**结果：** 连接成功，当前有 3 篇文章 ✅
-
-### 步骤 3：启动开发服务器
-
-```bash
-cd /Users/xiaojiang/web/demo-vuessr
-npm run dev
-```
-
-**结果：** 开发服务器已在后台运行 ✅  
-**地址：** http://localhost:3000
-
-### 步骤 4：验证服务可用
-
-```bash
-curl -s -o /dev/null -w "首页: %{http_code}\n" http://localhost:3000/
-curl -s -o /dev/null -w "后台登录: %{http_code}\n" http://localhost:3000/admin/login
-curl -s http://localhost:3000/api/posts | head -c 120
-```
-
-**结果：** 首页 200、后台登录 200、API 正常返回 JSON ✅
+完整说明见 `.env.example` 与 [TUTORIAL.md](./TUTORIAL.md)。
 
 ---
 
 ## 八、常见问题
 
-| 问题 | 解决命令 |
-|------|----------|
-| `Access denied for user 'blog'` | 用 root 重新创建 blog 用户（见第二节第 5 步） |
-| 端口 3000 被占用 | `lsof -ti :3000 \| xargs kill` 后重新 `npm run dev` |
+| 问题 | 处理 |
+|------|------|
+| `Access denied for user 'blog'` | 用 root 重建 blog 用户（见第二节） |
+| 端口 3000 被占用 | `lsof -ti :3000 \| xargs kill` 后重跑 `npm run dev` |
 | 表不存在 | `npm run db:push && npm run db:seed` |
-| 管理员无法进后台 | `mysql -u root -p123456 -e "UPDATE blog_db.users SET role='admin' WHERE username='admin';"` |
+| 后台页 500 / getSSRProps | 确认存在 `plugins/auth-directive.ts`（非 `.client.ts`） |
+| 后台进不去 | 确认用户 `role='admin'` |
+| 搜索无结果 | 启动 Meilisearch 并 `npm run search:reindex` |
+| dev 长时间运行异常 | 重启 dev；必要时 `rm -rf .nuxt && npm run dev` |
+| E2E 失败 | 确保 `localhost:3000` 可访问；`npx playwright install chromium` |
 
 ---
 
-更多细节见：[LOCAL_SETUP_LOG.md](./LOCAL_SETUP_LOG.md) | [DEPLOY.md](./DEPLOY.md)
+## 九、验证服务
+
+```bash
+curl -s -o /dev/null -w "首页: %{http_code}\n" http://localhost:3000/
+curl -s -o /dev/null -w "后台: %{http_code}\n" http://localhost:3000/admin/login
+curl -s "http://localhost:3000/api/posts" | head -c 80
+```
+
+---
+
+更多历史记录：[LOCAL_SETUP_LOG.md](./LOCAL_SETUP_LOG.md) · 生产部署：[DEPLOY.md](./DEPLOY.md)

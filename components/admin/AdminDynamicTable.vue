@@ -1,54 +1,51 @@
 <template>
-  <div class="space-y-4">
-    <!-- 搜索栏 -->
-    <div v-if="searchable" class="flex flex-wrap gap-2">
-      <input
-        v-model="keyword"
-        class="input max-w-xs"
+  <a-space direction="vertical" size="middle" style="width: 100%">
+    <a-space v-if="searchable" wrap>
+      <a-input-search
+        v-model:value="keyword"
         :placeholder="searchPlaceholder"
-        @keyup.enter="emit('search', keyword)"
+        allow-clear
+        style="width: 280px"
+        @search="emit('search', keyword)"
       />
-      <button class="btn-primary" @click="emit('search', keyword)">搜索</button>
-      <button v-if="exportable" class="btn-secondary" @click="exportCsv">导出 CSV</button>
+      <a-button v-if="exportable" @click="exportCsv">导出 CSV</a-button>
       <slot name="toolbar" />
-    </div>
+    </a-space>
 
-    <!-- 表格 -->
-    <div class="card overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead>
-          <tr class="border-b dark:border-gray-700">
-            <th v-for="col in columns" :key="col.key" class="p-3 whitespace-nowrap">{{ col.title }}</th>
-            <th v-if="$slots.actions" class="p-3">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, idx) in data" :key="rowKey ? row[rowKey] : idx" class="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-            <td v-for="col in columns" :key="col.key" class="p-3">
-              <slot :name="`col-${col.key}`" :row="row" :value="row[col.key]">
-                {{ col.format ? col.format(row[col.key], row) : row[col.key] }}
-              </slot>
-            </td>
-            <td v-if="$slots.actions" class="p-3">
-              <slot name="actions" :row="row" />
-            </td>
-          </tr>
-          <tr v-if="data.length === 0">
-            <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="p-8 text-center text-gray-400">暂无数据</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <Pagination v-if="total > pageSize" :page="page" :total="total" :page-size="pageSize" @change="emit('page-change', $event)" />
-  </div>
+    <a-table
+      :columns="antdColumns"
+      :data-source="data"
+      :row-key="rowKey || 'id'"
+      :pagination="paginationConfig"
+      size="middle"
+      bordered
+      @change="onTableChange"
+    >
+      <template #bodyCell="{ column, record, text }">
+        <template v-if="column.key === '__actions__'">
+          <slot name="actions" :row="record" />
+        </template>
+        <template v-else-if="column.key && slots[`col-${String(column.key)}`]">
+          <slot :name="`col-${String(column.key)}`" :row="record" :value="text" />
+        </template>
+        <template v-else-if="column.key">
+          {{ formatCell(String(column.key), text, record) }}
+        </template>
+      </template>
+      <template #emptyText>
+        <a-empty description="暂无数据" />
+      </template>
+    </a-table>
+  </a-space>
 </template>
 
 <script setup lang="ts">
-/** 动态表格：搜索 + 分页 + CSV 导出 */
+import type { TableColumnType, TableProps } from 'ant-design-vue/es/table'
+
 export interface TableColumn {
   key: string
   title: string
+  width?: number
   format?: (val: unknown, row: Record<string, unknown>) => string
 }
 
@@ -74,9 +71,46 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{ search: [keyword: string]; 'page-change': [page: number] }>()
+const slots = useSlots()
 const keyword = ref('')
 
-/** 导出 CSV */
+const antdColumns = computed<TableColumnType[]>(() => {
+  const cols: TableColumnType[] = props.columns.map((c) => ({
+    title: c.title,
+    dataIndex: c.key,
+    key: c.key,
+    width: c.width,
+    ellipsis: c.key === 'title' || c.key === 'detail',
+  }))
+  if (slots.actions) {
+    cols.push({ title: '操作', key: '__actions__', width: 180, fixed: 'right' })
+  }
+  return cols
+})
+
+const paginationConfig = computed(() => {
+  if (props.total <= props.pageSize) return false
+  return {
+    current: props.page,
+    pageSize: props.pageSize,
+    total: props.total,
+    showSizeChanger: false,
+    showTotal: (total: number) => `共 ${total} 条`,
+  }
+})
+
+function formatCell(key: string, val: unknown, row: Record<string, unknown>) {
+  const col = props.columns.find((c) => c.key === key)
+  if (col?.format) return col.format(val, row)
+  return val ?? '-'
+}
+
+const onTableChange: TableProps['onChange'] = (pag) => {
+  if (pag?.current && pag.current !== props.page) {
+    emit('page-change', pag.current)
+  }
+}
+
 function exportCsv() {
   const header = props.columns.map((c) => c.title).join(',')
   const rows = props.data.map((row) =>

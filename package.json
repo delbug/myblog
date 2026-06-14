@@ -7,7 +7,7 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "nuxt prepare && node scripts/copy-vditor.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -23,6 +23,7 @@
     "pm2:stop": "pm2 stop vue-blog"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
     "@nuxtjs/color-mode": "^4.0.1",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@scalar/api-reference": "^1.39.3",
@@ -34,6 +35,7 @@
     "@tiptap/vue-3": "^3.0.0",
     "@vueuse/core": "^14.3.0",
     "ali-oss": "^6.23.0",
+    "ant-design-vue": "^4.2.6",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.6.0",
     "dayjs": "^1.11.21",

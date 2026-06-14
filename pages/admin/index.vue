@@ -1,32 +1,32 @@
 <template>
   <div>
-    <h1 class="mb-6 text-2xl font-bold">仪表盘</h1>
+    <AdminPageHeader title="仪表盘">
+      <template #extra>
+        <a-button type="primary" @click="navigateTo('/admin/posts/new')">写新文章</a-button>
+      </template>
+    </AdminPageHeader>
 
-    <div class="grid gap-4 sm:grid-cols-3">
-      <div class="card text-center">
-        <p class="text-3xl font-bold text-primary-600">{{ stats.published }}</p>
-        <p class="mt-1 text-sm text-gray-500">已发布文章</p>
-      </div>
-      <div class="card text-center">
-        <p class="text-3xl font-bold text-yellow-600">{{ stats.draft }}</p>
-        <p class="mt-1 text-sm text-gray-500">草稿</p>
-      </div>
-      <div class="card text-center">
-        <p class="text-3xl font-bold text-green-600">{{ stats.pendingComments }}</p>
-        <p class="mt-1 text-sm text-gray-500">待审核评论</p>
-      </div>
-    </div>
-
-    <div class="mt-8">
-      <NuxtLink to="/admin/posts/new" class="btn-primary">写新文章</NuxtLink>
-    </div>
+    <a-row :gutter="[16, 16]">
+      <a-col :xs="24" :sm="8">
+        <a-card>
+          <a-statistic title="已发布文章" :value="stats.published" value-style="color: #1677ff" />
+        </a-card>
+      </a-col>
+      <a-col :xs="24" :sm="8">
+        <a-card>
+          <a-statistic title="草稿" :value="stats.draft" value-style="color: #faad14" />
+        </a-card>
+      </a-col>
+      <a-col :xs="24" :sm="8">
+        <a-card>
+          <a-statistic title="待审核评论" :value="stats.pendingComments" value-style="color: #52c41a" />
+        </a-card>
+      </a-col>
+    </a-row>
   </div>
 </template>
 
 <script setup lang="ts">
-/**
- * 管理后台仪表盘
- */
 definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
 
 const { data: publishedData } = await useFetch('/api/admin/posts', { query: { status: 'published', pageSize: 1 } })

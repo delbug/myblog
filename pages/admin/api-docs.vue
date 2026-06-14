@@ -1,12 +1,11 @@
 <template>
   <div>
-    <AdminBreadcrumb :items="[{ label: 'API 文档' }]" />
-    <h1 class="mb-4 text-2xl font-bold">API 文档</h1>
-    <p class="mb-4 text-sm text-gray-500">基于 OpenAPI 3.0，由 Scalar 渲染交互式文档。</p>
+    <AdminPageHeader title="API 文档" :breadcrumb="[{ label: 'API 文档' }]" subtitle="基于 OpenAPI 3.0，Scalar 交互式文档" />
+
     <ClientOnly>
-      <div ref="scalarRef" class="scalar-wrap min-h-[70vh] overflow-hidden rounded-lg border dark:border-gray-700" />
+      <div ref="scalarRef" class="scalar-wrap min-h-[70vh] overflow-hidden rounded-lg border border-gray-200" />
       <template #fallback>
-        <p class="text-gray-500">加载 API 文档...</p>
+        <a-skeleton active :paragraph="{ rows: 8 }" />
       </template>
     </ClientOnly>
   </div>

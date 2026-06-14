@@ -34,8 +34,8 @@ DB_ROOT_PASSWORD=请替换为强密码
 ```
 
 ```bash
-# 3. 启动 MySQL
-docker compose up mysql -d
+# 3. 启动 MySQL + Meilisearch（可选）
+docker compose up mysql meilisearch -d
 
 # 4. 等待 MySQL 就绪（约 15 秒），初始化数据库
 npm install
@@ -59,6 +59,14 @@ docker compose up -d --build
 | http://localhost:3000/rss.xml | RSS 订阅 |
 
 默认管理员账号：`admin` / `admin123`（**部署后立即修改密码**）
+
+部署后若启用 Meilisearch，在容器内或宿主机执行：
+
+```bash
+npm run search:reindex
+```
+
+或在后台 **站点设置 → 重建 Meilisearch 索引**。
 
 ### 常用命令
 
@@ -175,11 +183,49 @@ sudo certbot --nginx -d your-domain.com
 
 ---
 
+## 可选组件配置
+
+### Meilisearch
+
+`docker-compose.yml` 已包含 `meilisearch` 服务。`.env`：
+
+```env
+MEILISEARCH_HOST=http://meilisearch:7700   # Docker 内网
+MEILISEARCH_API_KEY=请改为强密钥
+```
+
+### Redis
+
+```env
+REDIS_URL=redis://your-redis:6379
+```
+
+用于热门文章缓存与阅读量缓冲。
+
+### 图床
+
+```env
+STORAGE_DRIVER=aliyun    # 或 qiniu / cloudinary / local
+# 见 .env.example 中 OSS / 七牛 / Cloudinary 变量
+```
+
+### 访问统计
+
+```env
+NUXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+NUXT_PUBLIC_BAIDU_TONGJI_ID=your-baidu-id
+```
+
+也可在后台 **站点设置** 中填写（优先生效）。
+
+---
+
 ## 生产环境检查清单
 
 部署完成后，请逐项确认：
 
-- [ ] 修改默认管理员密码
+- [ ] 若使用 Meilisearch，已执行索引重建
+- [ ] 若使用 OSS/Cloudinary，图片上传正常
 - [ ] `JWT_SECRET` 已设为随机强密钥
 - [ ] `NUXT_PUBLIC_SITE_URL` 设为真实域名（含 https）
 - [ ] MySQL 密码足够复杂

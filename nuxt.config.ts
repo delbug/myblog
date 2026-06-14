@@ -63,6 +63,19 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: 'node-server',
+    publicAssets: [
+      {
+        baseURL: '/vditor',
+        dir: 'node_modules/vditor/dist',
+        maxAge: 60 * 60 * 24 * 365,
+      },
+    ],
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: ['vditor'],
+    },
   },
 
   // ISR：高流量页面增量静态渲染（SWR 模式）
