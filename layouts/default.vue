@@ -1,15 +1,18 @@
 <template>
-  <div class="min-h-screen flex flex-col">
-    <AppHeader />
-    <main class="flex-1">
-      <slot />
-    </main>
-    <AppFooter />
-  </div>
+  <a-config-provider :locale="zhCN">
+    <a-layout class="site-app">
+      <AppHeader />
+      <a-layout-content class="site-content">
+        <slot />
+      </a-layout-content>
+      <AppFooter />
+    </a-layout>
+  </a-config-provider>
 </template>
 
 <script setup lang="ts">
-/**
- * 默认布局：顶栏 + 内容 + 底栏
- */
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+
+import 'ant-design-vue/dist/reset.css'
+import '~/assets/css/site-antd.css'
 </script>

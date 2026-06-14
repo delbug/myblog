@@ -1,26 +1,29 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <h1 class="mb-8 text-2xl font-bold">作者专栏</h1>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <NuxtLink
-        v-for="author in authors"
-        :key="author.id"
-        :to="`/authors/${author.username}`"
-        class="card transition-shadow hover:shadow-md"
-      >
-        <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-lg font-bold text-primary-700 dark:bg-primary-900/40">
-            {{ author.username.charAt(0).toUpperCase() }}
-          </div>
-          <div>
-            <h2 class="font-semibold">{{ author.username }}</h2>
-            <p class="text-sm text-gray-500">{{ author.postCount }} 篇文章</p>
-          </div>
-        </div>
-        <p v-if="author.bio" class="mt-3 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{{ author.bio }}</p>
-      </NuxtLink>
-    </div>
-    <p v-if="!authors.length" class="text-gray-500">暂无作者</p>
+  <div class="site-container">
+    <a-typography-title :level="2">作者专栏</a-typography-title>
+
+    <a-row :gutter="[16, 16]" style="margin-top: 24px">
+      <a-col v-for="author in authors" :key="author.id" :xs="24" :sm="12" :lg="8">
+        <NuxtLink :to="`/authors/${author.username}`">
+          <a-card hoverable>
+            <a-card-meta>
+              <template #avatar>
+                <a-avatar size="large" style="background-color: #1677ff">
+                  {{ author.username.charAt(0).toUpperCase() }}
+                </a-avatar>
+              </template>
+              <template #title>{{ author.username }}</template>
+              <template #description>{{ author.postCount }} 篇文章</template>
+            </a-card-meta>
+            <a-typography-paragraph v-if="author.bio" type="secondary" :ellipsis="{ rows: 2 }" style="margin-top: 12px; margin-bottom: 0">
+              {{ author.bio }}
+            </a-typography-paragraph>
+          </a-card>
+        </NuxtLink>
+      </a-col>
+    </a-row>
+
+    <a-empty v-if="!authors.length" description="暂无作者" style="margin-top: 48px" />
   </div>
 </template>
 

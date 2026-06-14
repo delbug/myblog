@@ -1,34 +1,45 @@
 <template>
-  <div class="container mx-auto max-w-2xl px-4 py-8">
-    <h1 class="mb-6 text-2xl font-bold">搜索</h1>
+  <div class="site-container" style="max-width: 720px">
+    <a-typography-title :level="1">搜索</a-typography-title>
 
-    <form class="mb-8 flex gap-2" @submit.prevent="search">
-      <input v-model="keyword" class="input flex-1" placeholder="输入关键词搜索..." autofocus />
-      <button type="submit" class="btn-primary">搜索</button>
-    </form>
+    <a-input-search
+      v-model:value="keyword"
+      placeholder="输入关键词搜索..."
+      enter-button="搜索"
+      size="large"
+      style="margin: 24px 0"
+      autofocus
+      @search="search"
+    />
 
-    <p v-if="keyword" class="mb-4 text-sm text-gray-500">
-      搜索 "{{ keyword }}" 共找到 {{ total }} 篇文章
-      <span v-if="engine" class="ml-2 rounded bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{{ engineLabel }}</span>
-    </p>
+    <a-space v-if="keyword" style="margin-bottom: 16px">
+      <a-typography-text type="secondary">搜索 "{{ keyword }}" 共找到 {{ total }} 篇文章</a-typography-text>
+      <a-tag v-if="engine">{{ engineLabel }}</a-tag>
+    </a-space>
 
-    <div class="space-y-6">
-      <article v-for="post in posts" :key="post.id" class="card">
-        <NuxtLink :to="`/posts/${post.slug}`" class="text-lg font-semibold text-primary-600 hover:underline">
-          <span v-if="post._formatted?.title" v-html="post._formatted.title" />
-          <span v-else>{{ post.title }}</span>
-        </NuxtLink>
-        <p v-if="post._formatted?.summary || post.summary" class="mt-2 text-sm text-gray-500">
-          <span v-if="post._formatted?.summary" v-html="post._formatted.summary" />
-          <span v-else>{{ post.summary }}</span>
-        </p>
-      </article>
-      <p v-if="keyword && posts.length === 0" class="text-gray-500">未找到相关文章</p>
-    </div>
+    <a-list v-if="posts.length" item-layout="vertical" :data-source="posts">
+      <template #renderItem="{ item }">
+        <a-list-item>
+          <a-list-item-meta>
+            <template #title>
+              <NuxtLink :to="`/posts/${item.slug}`">
+                <span v-if="item._formatted?.title" v-html="item._formatted.title" />
+                <span v-else>{{ item.title }}</span>
+              </NuxtLink>
+            </template>
+            <template #description>
+              <span v-if="item._formatted?.summary" v-html="item._formatted.summary" />
+              <span v-else>{{ item.summary }}</span>
+            </template>
+          </a-list-item-meta>
+        </a-list-item>
+      </template>
+    </a-list>
+
+    <a-empty v-else-if="keyword" description="未找到相关文章" />
 
     <Pagination
       v-if="total > pageSize"
-      class="mt-8"
       :page="page"
       :total="total"
       :page-size="pageSize"
@@ -38,7 +49,6 @@
 </template>
 
 <script setup lang="ts">
-/** 搜索页（Meilisearch 优先，未配置时 MySQL 回退） */
 const route = useRoute()
 const keyword = ref((route.query.keyword as string) || '')
 const page = ref(1)

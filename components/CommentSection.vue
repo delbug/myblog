@@ -1,21 +1,35 @@
 <template>
-  <section class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700">
-    <h3 class="mb-4 text-lg font-semibold">评论 ({{ totalCount }})</h3>
+  <a-divider />
+  <section>
+    <a-typography-title :level="4">评论 ({{ totalCount }})</a-typography-title>
 
-    <form class="mb-6 space-y-3" @submit.prevent="submitComment">
-      <div v-if="!isLoggedIn" class="grid gap-3 sm:grid-cols-2">
-        <input v-model="form.authorName" class="input" placeholder="昵称 *" required />
-        <input v-model="form.authorEmail" class="input" type="email" placeholder="邮箱（可选）" />
-      </div>
-      <p v-else class="text-sm text-gray-500">以 {{ user?.username }} 身份评论</p>
-      <textarea v-model="form.content" class="input min-h-[100px]" placeholder="写下你的评论..." required />
-      <button type="submit" class="btn-primary" :disabled="submitting">
-        {{ submitting ? '提交中...' : '发表评论' }}
-      </button>
-      <p v-if="message" class="text-sm" :class="messageType === 'success' ? 'text-green-600' : 'text-red-600'">{{ message }}</p>
-    </form>
+    <a-form layout="vertical" class="mb-6" @finish="submitComment">
+      <a-row v-if="!isLoggedIn" :gutter="12">
+        <a-col :xs="24" :sm="12">
+          <a-form-item label="昵称" required>
+            <a-input v-model:value="form.authorName" placeholder="昵称" />
+          </a-form-item>
+        </a-col>
+        <a-col :xs="24" :sm="12">
+          <a-form-item label="邮箱">
+            <a-input v-model:value="form.authorEmail" type="email" placeholder="邮箱（可选）" />
+          </a-form-item>
+        </a-col>
+      </a-row>
+      <a-typography-text v-else type="secondary" style="display: block; margin-bottom: 12px">
+        以 {{ user?.username }} 身份评论
+      </a-typography-text>
 
-    <div class="space-y-4">
+      <a-form-item label="评论内容" required>
+        <a-textarea v-model:value="form.content" :rows="4" placeholder="写下你的评论..." />
+      </a-form-item>
+
+      <a-alert v-if="message" :type="messageType === 'success' ? 'success' : 'error'" :message="message" show-icon class="mb-3" />
+
+      <a-button type="primary" html-type="submit" :loading="submitting">发表评论</a-button>
+    </a-form>
+
+    <div v-if="comments.length">
       <CommentItem
         v-for="comment in comments"
         :key="comment.id"
@@ -23,23 +37,21 @@
         :post-id="postId"
         @reply="startReply"
       />
-      <p v-if="comments.length === 0" class="text-sm text-gray-500">暂无评论，来抢沙发吧！</p>
     </div>
+    <a-empty v-else description="暂无评论，来抢沙发吧！" />
 
-    <!-- 回复框 -->
-    <div v-if="replyTo" class="mt-4 rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20">
-      <p class="mb-2 text-sm">回复 @{{ replyTo.authorName }}</p>
-      <textarea v-model="replyContent" class="input min-h-[80px]" placeholder="写下回复..." />
-      <div class="mt-2 flex gap-2">
-        <button class="btn-primary" @click="submitReply">提交回复</button>
-        <button class="btn-secondary" @click="replyTo = null">取消</button>
-      </div>
-    </div>
+    <a-card v-if="replyTo" size="small" style="margin-top: 16px" title="回复">
+      <template #extra>
+        <a-button type="text" size="small" @click="replyTo = null">取消</a-button>
+      </template>
+      <a-typography-text type="secondary">回复 @{{ replyTo.authorName }}</a-typography-text>
+      <a-textarea v-model:value="replyContent" :rows="3" placeholder="写下回复..." style="margin: 12px 0" />
+      <a-button type="primary" @click="submitReply">提交回复</a-button>
+    </a-card>
   </section>
 </template>
 
 <script setup lang="ts">
-/** 评论组件：嵌套回复 + 登录用户 */
 const props = defineProps<{ postId: number }>()
 const { user, isLoggedIn } = useAuth()
 
@@ -63,6 +75,7 @@ const totalCount = computed(() => {
 })
 
 async function submitComment() {
+  if (!form.content.trim()) return
   submitting.value = true
   message.value = ''
   try {
@@ -73,6 +86,7 @@ async function submitComment() {
     message.value = '评论已提交，等待审核'
     messageType.value = 'success'
     form.content = ''
+    refresh()
   } catch (e: unknown) {
     message.value = (e as { data?: { message?: string } })?.data?.message || '提交失败'
     messageType.value = 'error'
@@ -101,5 +115,6 @@ async function submitReply() {
   replyContent.value = ''
   message.value = '回复已提交，等待审核'
   messageType.value = 'success'
+  refresh()
 }
 </script>

@@ -1,74 +1,71 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="grid gap-8 lg:grid-cols-3">
-      <article v-if="post" class="lg:col-span-2">
-        <header class="mb-8">
-          <img v-if="post.coverImage" :src="post.coverImage" :alt="post.title" class="mb-6 max-h-80 w-full rounded-xl object-cover" />
-          <h1 class="text-3xl font-bold leading-tight">{{ post.title }}</h1>
-          <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-            <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`" class="font-medium text-primary-600 hover:underline">
-              {{ post.author.username }}
+  <div class="site-container">
+    <a-row :gutter="24">
+      <a-col :xs="24" :lg="16">
+        <template v-if="post">
+          <img v-if="post.coverImage" :src="post.coverImage" :alt="post.title" class="site-post-detail-cover mb-6">
+
+          <a-typography-title :level="1">{{ post.title }}</a-typography-title>
+
+          <a-space wrap style="margin: 16px 0">
+            <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`">
+              <a-typography-link strong>{{ post.author.username }}</a-typography-link>
             </NuxtLink>
-            <span>{{ formatDate(post.publishedAt || post.createdAt, 'YYYY年MM月DD日') }}</span>
-            <span v-if="post.category">
-              <NuxtLink :to="`/categories/${post.category.slug}`" class="text-primary-600 hover:underline">
-                {{ post.category.name }}
-              </NuxtLink>
-            </span>
-            <span>{{ post.viewCount }} 阅读</span>
-            <span>{{ post.likeCount || 0 }} 点赞</span>
-            <span>{{ post.commentCount }} 评论</span>
-          </div>
-          <div class="mt-4 flex gap-3">
-            <button class="btn-secondary text-sm" :class="{ 'text-red-500': liked }" @click="toggleLike">
-              {{ liked ? '❤️ 已赞' : '🤍 点赞' }} ({{ post.likeCount || 0 }})
-            </button>
-            <button class="btn-secondary text-sm" :class="{ 'text-yellow-500': favorited }" @click="toggleFavorite">
-              {{ favorited ? '⭐ 已收藏' : '☆ 收藏' }}
-            </button>
-          </div>
-          <div v-if="post.tags.length" class="mt-3 flex flex-wrap gap-2">
-            <NuxtLink
-              v-for="tag in post.tags"
-              :key="tag.id"
-              :to="`/tags/${tag.slug}`"
-              class="rounded bg-gray-100 px-2 py-0.5 text-xs hover:bg-primary-100 dark:bg-gray-800"
-            >
-              #{{ tag.name }}
+            <a-typography-text type="secondary">{{ formatDate(post.publishedAt || post.createdAt, 'YYYY年MM月DD日') }}</a-typography-text>
+            <NuxtLink v-if="post.category" :to="`/categories/${post.category.slug}`">
+              <a-tag>{{ post.category.name }}</a-tag>
             </NuxtLink>
-          </div>
-        </header>
+            <a-typography-text type="secondary">{{ post.viewCount }} 阅读</a-typography-text>
+            <a-typography-text type="secondary">{{ post.likeCount || 0 }} 点赞</a-typography-text>
+            <a-typography-text type="secondary">{{ post.commentCount }} 评论</a-typography-text>
+          </a-space>
 
-        <!-- Markdown 渲染内容 -->
-        <div class="prose-blog" v-html="post.htmlContent" />
+          <a-space style="margin-bottom: 16px">
+            <a-button :type="liked ? 'primary' : 'default'" @click="toggleLike">
+              <HeartOutlined /> {{ liked ? '已赞' : '点赞' }} ({{ post.likeCount || 0 }})
+            </a-button>
+            <a-button :type="favorited ? 'primary' : 'default'" @click="toggleFavorite">
+              <StarOutlined /> {{ favorited ? '已收藏' : '收藏' }}
+            </a-button>
+          </a-space>
 
-        <!-- 相关文章 -->
-        <section v-if="post.related?.length" class="mt-12 border-t border-gray-200 pt-8 dark:border-gray-700">
-          <h3 class="mb-4 text-lg font-semibold">相关文章</h3>
-          <ul class="space-y-2">
-            <li v-for="item in post.related" :key="item.id">
-              <NuxtLink :to="`/posts/${item.slug}`" class="text-primary-600 hover:underline">
-                {{ item.title }}
-              </NuxtLink>
-            </li>
-          </ul>
-        </section>
+          <a-space v-if="post.tags.length" wrap style="margin-bottom: 24px">
+            <NuxtLink v-for="tag in post.tags" :key="tag.id" :to="`/tags/${tag.slug}`">
+              <a-tag color="blue">{{ tag.name }}</a-tag>
+            </NuxtLink>
+          </a-space>
 
-        <CommentSection :post-id="post.id" />
-      </article>
+          <a-card :bordered="false">
+            <div class="prose-blog" v-html="post.htmlContent" />
+          </a-card>
 
-      <Sidebar />
-    </div>
+          <a-card v-if="post.related?.length" title="相关文章" style="margin-top: 24px">
+            <a-list size="small" :data-source="post.related">
+              <template #renderItem="{ item }">
+                <a-list-item>
+                  <NuxtLink :to="`/posts/${item.slug}`">
+                    <a-typography-link>{{ item.title }}</a-typography-link>
+                  </NuxtLink>
+                </a-list-item>
+              </template>
+            </a-list>
+          </a-card>
+
+          <CommentSection :post-id="post.id" />
+        </template>
+      </a-col>
+
+      <a-col :xs="24" :lg="8">
+        <Sidebar />
+      </a-col>
+    </a-row>
   </div>
 </template>
 
 <script setup lang="ts">
+import { HeartOutlined, StarOutlined } from '@ant-design/icons-vue'
 import { formatDate } from '~/utils/format'
 
-/**
- * 文章详情页
- * SSR 渲染完整 HTML，利于 SEO
- */
 const route = useRoute()
 const slug = route.params.slug as string
 
@@ -96,7 +93,6 @@ async function toggleFavorite() {
   favorited.value = res.data.favorited
 }
 
-// 动态 SEO Meta + JSON-LD
 usePageSeo({
   title: post.value.title,
   description: post.value.summary || undefined,

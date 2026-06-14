@@ -1,30 +1,15 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="grid gap-8 lg:grid-cols-3">
-      <div class="space-y-6 lg:col-span-2">
-        <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold">最新文章</h1>
-          <div class="flex gap-2 text-sm">
-            <button
-              class="rounded px-3 py-1"
-              :class="orderBy === 'latest' ? 'bg-primary-100 text-primary-700' : 'text-gray-500'"
-              @click="setOrder('latest')"
-            >
-              最新
-            </button>
-            <button
-              class="rounded px-3 py-1"
-              :class="orderBy === 'popular' ? 'bg-primary-100 text-primary-700' : 'text-gray-500'"
-              @click="setOrder('popular')"
-            >
-              热门
-            </button>
-          </div>
+  <div class="site-container">
+    <a-row :gutter="24">
+      <a-col :xs="24" :lg="16">
+        <div class="flex items-center justify-between mb-4">
+          <a-typography-title :level="1" style="margin: 0">最新文章</a-typography-title>
+          <a-segmented v-model:value="orderBy" :options="orderOptions" @change="onOrderChange" />
         </div>
 
         <PostCard v-for="post in posts" :key="post.id" :post="post" />
 
-        <p v-if="posts.length === 0" class="text-center text-gray-500">暂无文章</p>
+        <a-empty v-if="posts.length === 0" description="暂无文章" />
 
         <Pagination
           :page="page"
@@ -32,20 +17,24 @@
           :page-size="pageSize"
           @change="onPageChange"
         />
-      </div>
+      </a-col>
 
-      <Sidebar />
-    </div>
+      <a-col :xs="24" :lg="8">
+        <Sidebar />
+      </a-col>
+    </a-row>
   </div>
 </template>
 
 <script setup lang="ts">
-/**
- * 首页：文章列表 + 侧边栏
- */
 const page = ref(1)
 const pageSize = 10
 const orderBy = ref<'latest' | 'popular'>('latest')
+
+const orderOptions = [
+  { label: '最新', value: 'latest' },
+  { label: '热门', value: 'popular' },
+]
 
 const config = useRuntimeConfig()
 usePageSeo({
@@ -60,14 +49,11 @@ const { data, refresh } = await useFetch('/api/posts', {
 const posts = computed(() => data.value?.data?.list || [])
 const total = computed(() => data.value?.data?.total || 0)
 
-/** 切换排序方式 */
-function setOrder(order: 'latest' | 'popular') {
-  orderBy.value = order
+function onOrderChange() {
   page.value = 1
   refresh()
 }
 
-/** 翻页 */
 function onPageChange(p: number) {
   page.value = p
   refresh()

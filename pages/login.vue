@@ -1,35 +1,31 @@
 <template>
-  <div class="flex min-h-[70vh] items-center justify-center px-4">
-    <form class="card w-full max-w-md space-y-4" @submit.prevent="submit">
-      <h1 class="text-center text-2xl font-bold">登录</h1>
-
-      <div>
-        <label class="mb-1 block text-sm">用户名</label>
-        <input v-model="form.username" class="input" required autocomplete="username" />
-      </div>
-      <div>
-        <label class="mb-1 block text-sm">密码</label>
-        <input v-model="form.password" class="input" type="password" required autocomplete="current-password" />
+  <div class="site-auth-page">
+    <a-card class="site-auth-card" :bordered="false">
+      <div class="text-center mb-6">
+        <a-typography-title :level="3" style="margin-bottom: 8px">登录</a-typography-title>
+        <a-typography-text type="secondary">欢迎回来</a-typography-text>
       </div>
 
-      <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
+      <a-form layout="vertical" :model="form" @finish="submit">
+        <a-form-item label="用户名" name="username" :rules="[{ required: true, message: '请输入用户名' }]">
+          <a-input v-model:value="form.username" size="large" autocomplete="username" />
+        </a-form-item>
+        <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请输入密码' }]">
+          <a-input-password v-model:value="form.password" size="large" autocomplete="current-password" />
+        </a-form-item>
+        <a-alert v-if="error" type="error" :message="error" show-icon class="mb-4" />
+        <a-button type="primary" html-type="submit" size="large" block :loading="loading">登录</a-button>
+      </a-form>
 
-      <button type="submit" class="btn-primary w-full" :disabled="loading">
-        {{ loading ? '登录中...' : '登录' }}
-      </button>
-
-      <p class="text-center text-sm text-gray-500">
-        还没有账号？
-        <NuxtLink to="/register" class="text-primary-600 hover:underline">立即注册</NuxtLink>
-      </p>
-    </form>
+      <div class="text-center" style="margin-top: 16px">
+        <a-typography-text type="secondary">还没有账号？</a-typography-text>
+        <NuxtLink to="/register"><a>立即注册</a></NuxtLink>
+      </div>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-/** 前台用户登录 */
-definePageMeta({ layout: 'default' })
-
 const route = useRoute()
 const { login } = useAuth()
 const form = reactive({ username: '', password: '' })

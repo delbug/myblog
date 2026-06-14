@@ -1,16 +1,30 @@
 <template>
-  <div class="container mx-auto max-w-2xl px-4 py-8">
-    <h1 class="mb-6 text-2xl font-bold">我的收藏</h1>
-    <div v-if="!isLoggedIn" class="card text-center">
-      <NuxtLink to="/login" class="btn-primary">请先登录</NuxtLink>
-    </div>
-    <div v-else class="space-y-4">
-      <div v-for="item in list" :key="item.id" class="card">
-        <NuxtLink :to="`/posts/${item.slug}`" class="text-lg font-semibold hover:text-primary-600">{{ item.title }}</NuxtLink>
-        <p v-if="item.summary" class="mt-1 text-sm text-gray-500">{{ item.summary }}</p>
-      </div>
-      <p v-if="list.length === 0" class="text-gray-500">暂无收藏</p>
-    </div>
+  <div class="site-container" style="max-width: 720px">
+    <a-typography-title :level="2">我的收藏</a-typography-title>
+
+    <a-card v-if="!isLoggedIn" style="margin-top: 24px">
+      <a-empty description="请先登录">
+        <NuxtLink to="/login">
+          <a-button type="primary">去登录</a-button>
+        </NuxtLink>
+      </a-empty>
+    </a-card>
+
+    <template v-else>
+      <a-list v-if="list.length" item-layout="vertical" :data-source="list" style="margin-top: 24px">
+        <template #renderItem="{ item }">
+          <a-list-item>
+            <a-list-item-meta>
+              <template #title>
+                <NuxtLink :to="`/posts/${item.slug}`">{{ item.title }}</NuxtLink>
+              </template>
+              <template #description>{{ item.summary }}</template>
+            </a-list-item-meta>
+          </a-list-item>
+        </template>
+      </a-list>
+      <a-empty v-else description="暂无收藏" style="margin-top: 48px" />
+    </template>
   </div>
 </template>
 

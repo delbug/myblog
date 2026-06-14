@@ -1,35 +1,45 @@
 <template>
-  <div class="container mx-auto max-w-lg px-4 py-8">
-    <h1 class="mb-6 text-2xl font-bold">个人中心</h1>
+  <div class="site-container" style="max-width: 560px">
+    <a-typography-title :level="2">个人中心</a-typography-title>
 
-    <div v-if="!isLoggedIn" class="card text-center">
-      <p class="mb-4 text-gray-500">请先登录</p>
-      <NuxtLink to="/login" class="btn-primary">去登录</NuxtLink>
-    </div>
+    <a-card v-if="!isLoggedIn" style="margin-top: 24px">
+      <a-empty description="请先登录">
+        <NuxtLink to="/login">
+          <a-button type="primary">去登录</a-button>
+        </NuxtLink>
+      </a-empty>
+    </a-card>
 
-    <div v-else class="card space-y-4">
-      <div class="flex items-center gap-4">
-        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-2xl font-bold text-primary-600">
+    <a-card v-else style="margin-top: 24px">
+      <a-space align="start" size="large">
+        <a-avatar size="large" style="background-color: #1677ff; width: 64px; height: 64px; line-height: 64px; font-size: 24px">
           {{ user?.username?.[0]?.toUpperCase() }}
-        </div>
+        </a-avatar>
         <div>
-          <p class="text-lg font-semibold">{{ user?.username }}</p>
-          <p class="text-sm text-gray-500">{{ user?.email || '未设置邮箱' }}</p>
-          <span class="mt-1 inline-block rounded bg-gray-100 px-2 py-0.5 text-xs">{{ user?.role === 'admin' ? '管理员' : '普通用户' }}</span>
+          <a-typography-title :level="4" style="margin: 0">{{ user?.username }}</a-typography-title>
+          <a-typography-text type="secondary">{{ user?.email || '未设置邮箱' }}</a-typography-text>
+          <div style="margin-top: 8px">
+            <a-tag>{{ user?.role === 'admin' ? '管理员' : '普通用户' }}</a-tag>
+          </div>
         </div>
-      </div>
+      </a-space>
 
-      <div v-if="user?.role === 'admin'">
-        <NuxtLink to="/admin" class="btn-primary">进入管理后台</NuxtLink>
-      </div>
+      <a-divider />
 
-      <button class="btn-secondary" @click="handleLogout">退出登录</button>
-    </div>
+      <a-space direction="vertical">
+        <NuxtLink v-if="user?.role === 'admin'" to="/admin">
+          <a-button type="primary">进入管理后台</a-button>
+        </NuxtLink>
+        <NuxtLink to="/user/favorites">
+          <a-button>我的收藏</a-button>
+        </NuxtLink>
+        <a-button @click="handleLogout">退出登录</a-button>
+      </a-space>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-/** 用户个人中心 */
 const { user, isLoggedIn, fetchUser, logout } = useAuth()
 
 await fetchUser()

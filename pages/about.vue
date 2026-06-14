@@ -1,24 +1,23 @@
 <template>
-  <div class="container mx-auto max-w-2xl px-4 py-8">
-    <h1 class="mb-8 text-3xl font-bold">关于我</h1>
+  <div class="site-container" style="max-width: 720px">
+    <a-typography-title :level="2">关于我</a-typography-title>
 
-    <div class="card prose-blog">
-      <p>{{ settings.about || '暂无介绍' }}</p>
+    <a-card style="margin-top: 24px">
+      <a-typography-paragraph>{{ settings.about || '暂无介绍' }}</a-typography-paragraph>
 
-      <div v-if="settings.email || settings.github" class="mt-6 space-y-2 not-prose">
-        <p v-if="settings.email">
-          📧 <a :href="`mailto:${settings.email}`" class="text-primary-600 hover:underline">{{ settings.email }}</a>
-        </p>
-        <p v-if="settings.github">
-          🔗 <a :href="settings.github" class="text-primary-600 hover:underline" target="_blank">GitHub</a>
-        </p>
-      </div>
-    </div>
+      <a-descriptions v-if="settings.email || settings.github" :column="1" style="margin-top: 16px">
+        <a-descriptions-item v-if="settings.email" label="邮箱">
+          <a :href="`mailto:${settings.email}`">{{ settings.email }}</a>
+        </a-descriptions-item>
+        <a-descriptions-item v-if="settings.github" label="GitHub">
+          <a :href="settings.github" target="_blank">GitHub</a>
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-/** 关于页 */
 const { data } = await useFetch('/api/settings')
 const settings = computed(() => data.value?.data || {})
 

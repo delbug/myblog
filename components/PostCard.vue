@@ -1,50 +1,47 @@
 <template>
-  <article class="card transition-shadow hover:shadow-md">
-    <img v-if="post.coverImage" :src="post.coverImage" :alt="post.title" class="mb-3 max-h-48 w-full rounded-lg object-cover" />
+  <a-card hoverable class="mb-4">
+    <template v-if="post.coverImage" #cover>
+      <NuxtLink :to="`/posts/${post.slug}`">
+        <img :src="post.coverImage" :alt="post.title" class="site-post-cover">
+      </NuxtLink>
+    </template>
 
-    <div v-if="post.isTop" class="mb-2">
-      <span class="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400">置顶</span>
-    </div>
+    <template #extra>
+      <a-tag v-if="post.isTop" color="red">置顶</a-tag>
+    </template>
 
-    <NuxtLink :to="`/posts/${post.slug}`" class="group">
-      <h2 class="text-xl font-semibold text-gray-900 group-hover:text-primary-600 dark:text-gray-100 dark:group-hover:text-primary-400">
-        {{ post.title }}
-      </h2>
+    <NuxtLink :to="`/posts/${post.slug}`">
+      <a-typography-title :level="4" style="margin: 0">{{ post.title }}</a-typography-title>
     </NuxtLink>
 
-    <p v-if="post.summary" class="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+    <a-typography-paragraph v-if="post.summary" type="secondary" :ellipsis="{ rows: 2 }" style="margin-top: 8px">
       {{ post.summary }}
-    </p>
+    </a-typography-paragraph>
 
-    <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-      <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`" class="hover:text-primary-600">
-        {{ post.author.username }}
+    <a-space wrap size="small" style="margin-top: 12px">
+      <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`">
+        <a-typography-link>{{ post.author.username }}</a-typography-link>
       </NuxtLink>
-      <span>{{ formatDate(post.publishedAt || post.createdAt) }}</span>
-      <span v-if="post.category">
-        <NuxtLink :to="`/categories/${post.category.slug}`" class="hover:text-primary-600">
-          {{ post.category.name }}
+      <a-typography-text type="secondary">{{ formatDate(post.publishedAt || post.createdAt) }}</a-typography-text>
+      <NuxtLink v-if="post.category" :to="`/categories/${post.category.slug}`">
+        <a-tag>{{ post.category.name }}</a-tag>
+      </NuxtLink>
+      <a-typography-text type="secondary">{{ post.viewCount }} 阅读</a-typography-text>
+    </a-space>
+
+    <div v-if="post.tags.length" style="margin-top: 8px">
+      <a-space wrap size="small">
+        <NuxtLink v-for="tag in post.tags" :key="tag.id" :to="`/tags/${tag.slug}`">
+          <a-tag color="blue">{{ tag.name }}</a-tag>
         </NuxtLink>
-      </span>
-      <span>{{ post.viewCount }} 阅读</span>
-      <div v-if="post.tags.length" class="flex flex-wrap gap-1">
-        <NuxtLink
-          v-for="tag in post.tags"
-          :key="tag.id"
-          :to="`/tags/${tag.slug}`"
-          class="rounded bg-gray-100 px-2 py-0.5 hover:bg-primary-100 hover:text-primary-700 dark:bg-gray-700 dark:hover:bg-primary-900/30"
-        >
-          #{{ tag.name }}
-        </NuxtLink>
-      </div>
+      </a-space>
     </div>
-  </article>
+  </a-card>
 </template>
 
 <script setup lang="ts">
 import { formatDate } from '~/utils/format'
 
-/** 文章卡片组件，用于列表页展示 */
 defineProps<{
   post: {
     id: number

@@ -1,19 +1,20 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="grid gap-8 lg:grid-cols-3">
-      <div class="space-y-6 lg:col-span-2">
-        <h1 class="text-2xl font-bold">标签：#{{ tagName }}</h1>
+  <div class="site-container">
+    <a-row :gutter="24">
+      <a-col :xs="24" :lg="16">
+        <a-typography-title :level="2">标签：#{{ tagName }}</a-typography-title>
         <PostCard v-for="post in posts" :key="post.id" :post="post" />
-        <p v-if="posts.length === 0" class="text-gray-500">该标签下暂无文章</p>
+        <a-empty v-if="posts.length === 0" description="该标签下暂无文章" />
         <Pagination :page="page" :total="total" :page-size="pageSize" @change="onPageChange" />
-      </div>
-      <Sidebar />
-    </div>
+      </a-col>
+      <a-col :xs="24" :lg="8">
+        <Sidebar />
+      </a-col>
+    </a-row>
   </div>
 </template>
 
 <script setup lang="ts">
-/** 标签文章列表页 */
 const route = useRoute()
 const slug = route.params.slug as string
 const page = ref(1)

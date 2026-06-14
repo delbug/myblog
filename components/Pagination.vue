@@ -1,31 +1,17 @@
 <template>
-  <nav v-if="totalPages > 1" class="flex items-center justify-center gap-2">
-    <button
-      class="btn-secondary px-3 py-1.5"
-      :disabled="page <= 1"
-      @click="goTo(page - 1)"
-    >
-      上一页
-    </button>
-
-    <span class="text-sm text-gray-600 dark:text-gray-400">
-      {{ page }} / {{ totalPages }}
-    </span>
-
-    <button
-      class="btn-secondary px-3 py-1.5"
-      :disabled="page >= totalPages"
-      @click="goTo(page + 1)"
-    >
-      下一页
-    </button>
-  </nav>
+  <div v-if="totalPages > 1" class="flex justify-center" style="margin-top: 24px">
+    <a-pagination
+      :current="page"
+      :total="total"
+      :page-size="pageSize"
+      :show-size-changer="false"
+      show-less-items
+      @change="goTo"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-/**
- * 分页组件
- */
 const props = defineProps<{
   page: number
   total: number
@@ -36,7 +22,6 @@ const emit = defineEmits<{ change: [page: number] }>()
 
 const totalPages = computed(() => Math.ceil(props.total / props.pageSize))
 
-/** 跳转到指定页 */
 function goTo(p: number) {
   if (p >= 1 && p <= totalPages.value) {
     emit('change', p)
