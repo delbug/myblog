@@ -1,7 +1,6 @@
 <template>
-  <a-divider />
-  <section>
-    <a-typography-title :level="4">评论 ({{ totalCount }})</a-typography-title>
+  <section style="margin-top: 8px">
+    <a-typography-title :level="5">评论 ({{ totalCount }})</a-typography-title>
 
     <a-form layout="vertical" class="mb-6" @finish="submitComment">
       <a-row v-if="!isLoggedIn" :gutter="12">

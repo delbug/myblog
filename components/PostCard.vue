@@ -1,5 +1,5 @@
 <template>
-  <a-card hoverable class="mb-4">
+  <a-card hoverable>
     <template v-if="post.coverImage" #cover>
       <NuxtLink :to="`/posts/${post.slug}`">
         <img :src="post.coverImage" :alt="post.title" class="site-post-cover">
@@ -32,7 +32,7 @@
     <div v-if="post.tags.length" style="margin-top: 8px">
       <a-space wrap size="small">
         <NuxtLink v-for="tag in post.tags" :key="tag.id" :to="`/tags/${tag.slug}`">
-          <a-tag color="blue">{{ tag.name }}</a-tag>
+          <a-tag>{{ tag.name }}</a-tag>
         </NuxtLink>
       </a-space>
     </div>

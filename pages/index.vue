@@ -1,15 +1,16 @@
 <template>
-  <div class="site-container">
-    <a-row :gutter="24">
+  <a-row :gutter="24">
       <a-col :xs="24" :lg="16">
-        <div class="flex items-center justify-between mb-4">
-          <a-typography-title :level="1" style="margin: 0">最新文章</a-typography-title>
-          <a-segmented v-model:value="orderBy" :options="orderOptions" @change="onOrderChange" />
-        </div>
+        <SitePageHeader title="最新文章">
+          <template #extra>
+            <a-segmented v-model:value="orderBy" :options="orderOptions" @change="onOrderChange" />
+          </template>
+        </SitePageHeader>
 
-        <PostCard v-for="post in posts" :key="post.id" :post="post" />
-
-        <a-empty v-if="posts.length === 0" description="暂无文章" />
+        <SiteMainPanel flush>
+          <PostCard v-for="post in posts" :key="post.id" :post="post" />
+          <a-empty v-if="posts.length === 0" description="暂无文章" />
+        </SiteMainPanel>
 
         <Pagination
           :page="page"
@@ -23,7 +24,6 @@
         <Sidebar />
       </a-col>
     </a-row>
-  </div>
 </template>
 
 <script setup lang="ts">

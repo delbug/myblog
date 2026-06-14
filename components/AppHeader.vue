@@ -1,52 +1,50 @@
 <template>
-  <a-layout-header class="site-header">
+  <header class="site-header">
     <div class="site-header-inner">
       <NuxtLink to="/" class="site-logo">{{ siteName }}</NuxtLink>
 
-      <a-menu
-        v-if="!isMobile"
-        mode="horizontal"
-        :selected-keys="selectedKeys"
-        :items="navItems"
-        class="site-menu"
-        @click="onNavClick"
-      />
+      <nav v-if="!isMobile" class="site-nav" aria-label="主导航">
+        <NuxtLink
+          v-for="item in navItems"
+          :key="item.key"
+          :to="item.key"
+          class="site-nav-link"
+          :class="{ 'site-nav-link--active': selectedKeys.includes(item.key) }"
+        >
+          {{ item.label }}
+        </NuxtLink>
+      </nav>
 
-      <a-space>
+      <div class="site-header-actions">
         <template v-if="isLoggedIn">
           <NuxtLink to="/user/profile">
-            <a-button type="link">{{ user?.username }}</a-button>
+            <a-button type="link" size="small">{{ user?.username }}</a-button>
           </NuxtLink>
           <NuxtLink v-if="isAdmin" to="/admin">
-            <a-button type="link">后台</a-button>
+            <a-button type="link" size="small">后台</a-button>
           </NuxtLink>
         </template>
         <template v-else>
           <NuxtLink to="/login">
-            <a-button type="link">登录</a-button>
+            <a-button type="link" size="small">登录</a-button>
           </NuxtLink>
           <NuxtLink to="/register">
             <a-button type="primary" size="small">注册</a-button>
           </NuxtLink>
         </template>
 
-        <a-button type="text" aria-label="切换主题" @click="toggleDark()">
-          <BulbFilled v-if="colorMode.value === 'dark'" />
-          <BulbOutlined v-else />
-        </a-button>
-
         <NuxtLink to="/rss.xml" target="_blank">
           <a-button type="text" size="small">RSS</a-button>
         </NuxtLink>
 
-        <a-button v-if="isMobile" type="text" aria-label="菜单" @click="drawerOpen = true">
+        <a-button v-if="isMobile" type="text" size="small" aria-label="菜单" @click="drawerOpen = true">
           <MenuOutlined />
         </a-button>
-      </a-space>
+      </div>
     </div>
 
     <a-drawer v-model:open="drawerOpen" placement="right" title="导航" :width="280">
-      <a-menu mode="inline" :selected-keys="selectedKeys" :items="navItems" @click="onDrawerNavClick" />
+      <a-menu mode="inline" :selected-keys="selectedKeys" :items="menuItems" @click="onDrawerNavClick" />
       <a-divider />
       <a-space direction="vertical" style="width: 100%">
         <NuxtLink v-if="!isLoggedIn" to="/login" @click="drawerOpen = false">
@@ -57,22 +55,21 @@
         </NuxtLink>
       </a-space>
     </a-drawer>
-  </a-layout-header>
+  </header>
 </template>
 
 <script setup lang="ts">
-import { BulbFilled, BulbOutlined, MenuOutlined } from '@ant-design/icons-vue'
+import { MenuOutlined } from '@ant-design/icons-vue'
 import type { MenuProps } from 'ant-design-vue'
 
 const config = useRuntimeConfig()
 const siteName = config.public.siteName
 const route = useRoute()
-const colorMode = useColorMode()
 const drawerOpen = ref(false)
 const isMobile = ref(false)
 const { user, isLoggedIn, isAdmin, fetchUser } = useAuth()
 
-const navItems: MenuProps['items'] = [
+const navItems = [
   { key: '/', label: '首页' },
   { key: '/archive', label: '归档' },
   { key: '/authors', label: '作者' },
@@ -80,11 +77,16 @@ const navItems: MenuProps['items'] = [
   { key: '/search', label: '搜索' },
 ]
 
+const menuItems: MenuProps['items'] = navItems.map(item => ({
+  key: item.key,
+  label: item.label,
+}))
+
 const selectedKeys = computed(() => {
   const path = route.path
   if (path === '/') return ['/']
-  const match = navItems?.find(item => item?.key !== '/' && path.startsWith(String(item?.key)))
-  return match ? [String(match.key)] : []
+  const match = navItems.find(item => item.key !== '/' && path.startsWith(item.key))
+  return match ? [match.key] : []
 })
 
 onMounted(() => {
@@ -93,14 +95,6 @@ onMounted(() => {
   isMobile.value = mq.matches
   mq.addEventListener('change', (e) => { isMobile.value = e.matches })
 })
-
-function toggleDark() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
-}
-
-function onNavClick({ key }: { key: string }) {
-  navigateTo(key)
-}
 
 function onDrawerNavClick({ key }: { key: string }) {
   drawerOpen.value = false

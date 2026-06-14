@@ -3,12 +3,12 @@ import { test, expect } from '@playwright/test'
 test.describe('前台', () => {
   test('首页可访问', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1')).toContainText('最新文章')
+    await expect(page.getByRole('heading', { name: '最新文章' })).toBeVisible()
   })
 
   test('搜索页可访问', async ({ page }) => {
     await page.goto('/search?keyword=博客')
-    await expect(page.locator('h1')).toContainText('搜索')
+    await expect(page.getByRole('heading', { name: '搜索' })).toBeVisible()
   })
 })
 

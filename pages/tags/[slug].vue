@@ -1,17 +1,19 @@
 <template>
-  <div class="site-container">
-    <a-row :gutter="24">
+  <a-row :gutter="24">
       <a-col :xs="24" :lg="16">
-        <a-typography-title :level="2">标签：#{{ tagName }}</a-typography-title>
-        <PostCard v-for="post in posts" :key="post.id" :post="post" />
-        <a-empty v-if="posts.length === 0" description="该标签下暂无文章" />
+        <SitePageHeader :title="`标签：${tagName}`" />
+
+        <SiteMainPanel flush>
+          <PostCard v-for="post in posts" :key="post.id" :post="post" />
+          <a-empty v-if="posts.length === 0" description="该标签下暂无文章" />
+        </SiteMainPanel>
+
         <Pagination :page="page" :total="total" :page-size="pageSize" @change="onPageChange" />
       </a-col>
       <a-col :xs="24" :lg="8">
         <Sidebar />
       </a-col>
     </a-row>
-  </div>
 </template>
 
 <script setup lang="ts">

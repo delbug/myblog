@@ -1,16 +1,16 @@
 <template>
-  <div class="site-container" style="max-width: 560px">
-    <a-typography-title :level="2">个人中心</a-typography-title>
+  <div>
+    <SitePageHeader title="个人中心" />
 
-    <a-card v-if="!isLoggedIn" style="margin-top: 24px">
+    <SiteMainPanel v-if="!isLoggedIn">
       <a-empty description="请先登录">
         <NuxtLink to="/login">
           <a-button type="primary">去登录</a-button>
         </NuxtLink>
       </a-empty>
-    </a-card>
+    </SiteMainPanel>
 
-    <a-card v-else style="margin-top: 24px">
+    <SiteMainPanel v-else>
       <a-space align="start" size="large">
         <a-avatar size="large" style="background-color: #1677ff; width: 64px; height: 64px; line-height: 64px; font-size: 24px">
           {{ user?.username?.[0]?.toUpperCase() }}
@@ -35,7 +35,7 @@
         </NuxtLink>
         <a-button @click="handleLogout">退出登录</a-button>
       </a-space>
-    </a-card>
+    </SiteMainPanel>
   </div>
 </template>
 

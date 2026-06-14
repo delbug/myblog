@@ -3,7 +3,9 @@
     <a-layout class="site-app">
       <AppHeader />
       <a-layout-content class="site-content">
-        <slot />
+        <div class="site-container">
+          <slot />
+        </div>
       </a-layout-content>
       <AppFooter />
     </a-layout>

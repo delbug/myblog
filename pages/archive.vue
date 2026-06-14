@@ -1,9 +1,9 @@
 <template>
-  <div class="site-container" style="max-width: 720px">
-    <a-typography-title :level="2">文章归档</a-typography-title>
+  <div>
+    <SitePageHeader title="文章归档" description="按年月浏览全部文章" />
 
-    <template v-if="archive && Object.keys(archive).length">
-      <a-collapse v-model:active-key="activeKeys" ghost style="margin-top: 24px">
+    <SiteMainPanel v-if="archive && Object.keys(archive).length">
+      <a-collapse v-model:active-key="activeKeys">
         <a-collapse-panel v-for="(items, month) in archive" :key="month" :header="month">
           <a-list size="small" :data-source="items">
             <template #renderItem="{ item }">
@@ -19,9 +19,11 @@
           </a-list>
         </a-collapse-panel>
       </a-collapse>
-    </template>
+    </SiteMainPanel>
 
-    <a-empty v-else description="暂无归档" style="margin-top: 48px" />
+    <SiteMainPanel v-else>
+      <a-empty description="暂无归档" />
+    </SiteMainPanel>
   </div>
 </template>
 

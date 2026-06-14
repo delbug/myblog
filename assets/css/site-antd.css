@@ -1,7 +1,19 @@
-/* 前台 Ant Design 微调 */
+/* 前台 Ant Design 统一设计 */
+:root {
+  --site-width: 1200px;
+  --site-gutter: 16px;
+}
+
 .site-app {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #f0f2f5;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+/* 前台保持 Ant Design 浅色壳，避免与 Tailwind dark 冲突 */
+.dark .site-app {
+  background: #f0f2f5;
+  color: rgba(0, 0, 0, 0.88);
 }
 
 .site-content {
@@ -9,24 +21,69 @@
 }
 
 .site-container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: var(--site-width);
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 var(--site-gutter);
+  box-sizing: border-box;
+}
+
+.site-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.site-page-header__title {
+  margin: 0 !important;
+}
+
+.site-page-header__desc {
+  display: block;
+  margin-top: 4px;
+}
+
+.site-page-header__extra {
+  flex-shrink: 0;
+}
+
+.site-main-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.site-main-panel--flush {
+  padding: 16px;
+}
+
+.site-main-panel--flush > .ant-card {
+  margin-bottom: 12px;
+}
+
+.site-main-panel--flush > .ant-card:last-child {
+  margin-bottom: 0;
 }
 
 .site-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 0 24px;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  line-height: 64px;
+  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .site-header-inner {
-  max-width: 1200px;
+  width: 100%;
+  max-width: var(--site-width);
+  height: 56px;
   margin: 0 auto;
+  padding: 0 var(--site-gutter);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -34,27 +91,89 @@
 }
 
 .site-logo {
+  flex-shrink: 0;
   font-size: 18px;
   font-weight: 600;
   color: #1677ff;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .site-logo:hover {
   color: #4096ff;
 }
 
-.site-header .site-menu {
+.site-nav {
   flex: 1;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  border-bottom: none;
+  gap: 4px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.site-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+  line-height: 1;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.site-nav-link:hover {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.06);
+}
+
+.site-nav-link--active {
+  color: #1677ff;
+  font-weight: 500;
+  background: rgba(22, 119, 255, 0.08);
+}
+
+.site-nav-link--active::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: #1677ff;
+}
+
+.site-header-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.site-header-actions .ant-btn-link {
+  padding-inline: 8px;
 }
 
 .site-footer {
-  text-align: center;
   background: #fff;
   border-top: 1px solid #f0f0f0;
+  padding: 24px var(--site-gutter);
+}
+
+.site-footer-inner {
+  width: 100%;
+  max-width: var(--site-width);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.site-footer-links {
+  margin-top: 8px;
 }
 
 .site-sidebar-card {
@@ -72,17 +191,40 @@
   max-height: 320px;
   object-fit: cover;
   border-radius: 8px;
+  margin-bottom: 16px;
 }
 
 .site-auth-page {
-  min-height: calc(100vh - 200px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  min-height: 480px;
+  padding: 24px 0;
 }
 
 .site-auth-card {
   width: 100%;
   max-width: 420px;
+  margin: 0 auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.site-meta-bar {
+  margin-bottom: 16px;
+}
+
+.site-action-bar {
+  margin-bottom: 16px;
+}
+
+.site-tag-bar {
+  margin-bottom: 16px;
+}
+
+.site-search-result {
+  margin-bottom: 12px;
+}
+
+.site-search-result:last-child {
+  margin-bottom: 0;
 }

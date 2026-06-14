@@ -1,11 +1,11 @@
 <template>
-  <div class="site-container" style="max-width: 720px">
-    <a-typography-title :level="2">关于我</a-typography-title>
+  <div>
+    <SitePageHeader title="关于我" />
 
-    <a-card style="margin-top: 24px">
+    <SiteMainPanel>
       <a-typography-paragraph>{{ settings.about || '暂无介绍' }}</a-typography-paragraph>
 
-      <a-descriptions v-if="settings.email || settings.github" :column="1" style="margin-top: 16px">
+      <a-descriptions v-if="settings.email || settings.github" :column="1" bordered size="small" style="margin-top: 16px">
         <a-descriptions-item v-if="settings.email" label="邮箱">
           <a :href="`mailto:${settings.email}`">{{ settings.email }}</a>
         </a-descriptions-item>
@@ -13,7 +13,7 @@
           <a :href="settings.github" target="_blank">GitHub</a>
         </a-descriptions-item>
       </a-descriptions>
-    </a-card>
+    </SiteMainPanel>
   </div>
 </template>
 

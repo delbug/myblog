@@ -1,30 +1,26 @@
 <template>
-  <div class="site-container" style="max-width: 720px">
-    <a-typography-title :level="2">我的收藏</a-typography-title>
+  <div>
+    <SitePageHeader title="我的收藏" />
 
-    <a-card v-if="!isLoggedIn" style="margin-top: 24px">
+    <SiteMainPanel v-if="!isLoggedIn">
       <a-empty description="请先登录">
         <NuxtLink to="/login">
           <a-button type="primary">去登录</a-button>
         </NuxtLink>
       </a-empty>
-    </a-card>
+    </SiteMainPanel>
 
-    <template v-else>
-      <a-list v-if="list.length" item-layout="vertical" :data-source="list" style="margin-top: 24px">
-        <template #renderItem="{ item }">
-          <a-list-item>
-            <a-list-item-meta>
-              <template #title>
-                <NuxtLink :to="`/posts/${item.slug}`">{{ item.title }}</NuxtLink>
-              </template>
-              <template #description>{{ item.summary }}</template>
-            </a-list-item-meta>
-          </a-list-item>
-        </template>
-      </a-list>
-      <a-empty v-else description="暂无收藏" style="margin-top: 48px" />
-    </template>
+    <SiteMainPanel v-else flush>
+      <a-card v-for="item in list" :key="item.id" size="small" class="site-search-result" hoverable>
+        <NuxtLink :to="`/posts/${item.slug}`">
+          <a-typography-title :level="5" style="margin: 0">{{ item.title }}</a-typography-title>
+        </NuxtLink>
+        <a-typography-paragraph v-if="item.summary" type="secondary" :ellipsis="{ rows: 2 }" style="margin-top: 8px; margin-bottom: 0">
+          {{ item.summary }}
+        </a-typography-paragraph>
+      </a-card>
+      <a-empty v-if="list.length === 0" description="暂无收藏" />
+    </SiteMainPanel>
   </div>
 </template>
 

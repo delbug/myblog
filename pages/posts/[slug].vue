@@ -1,57 +1,60 @@
 <template>
-  <div class="site-container">
-    <a-row :gutter="24">
+  <a-row :gutter="24">
       <a-col :xs="24" :lg="16">
         <template v-if="post">
-          <img v-if="post.coverImage" :src="post.coverImage" :alt="post.title" class="site-post-detail-cover mb-6">
+          <SiteMainPanel>
+            <img v-if="post.coverImage" :src="post.coverImage" :alt="post.title" class="site-post-detail-cover">
 
-          <a-typography-title :level="1">{{ post.title }}</a-typography-title>
+            <a-typography-title :level="1" style="margin-top: 0">{{ post.title }}</a-typography-title>
 
-          <a-space wrap style="margin: 16px 0">
-            <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`">
-              <a-typography-link strong>{{ post.author.username }}</a-typography-link>
-            </NuxtLink>
-            <a-typography-text type="secondary">{{ formatDate(post.publishedAt || post.createdAt, 'YYYY年MM月DD日') }}</a-typography-text>
-            <NuxtLink v-if="post.category" :to="`/categories/${post.category.slug}`">
-              <a-tag>{{ post.category.name }}</a-tag>
-            </NuxtLink>
-            <a-typography-text type="secondary">{{ post.viewCount }} 阅读</a-typography-text>
-            <a-typography-text type="secondary">{{ post.likeCount || 0 }} 点赞</a-typography-text>
-            <a-typography-text type="secondary">{{ post.commentCount }} 评论</a-typography-text>
-          </a-space>
+            <a-space wrap class="site-meta-bar">
+              <NuxtLink v-if="post.author" :to="`/authors/${post.author.username}`">
+                <a-typography-link strong>{{ post.author.username }}</a-typography-link>
+              </NuxtLink>
+              <a-typography-text type="secondary">{{ formatDate(post.publishedAt || post.createdAt, 'YYYY年MM月DD日') }}</a-typography-text>
+              <NuxtLink v-if="post.category" :to="`/categories/${post.category.slug}`">
+                <a-tag>{{ post.category.name }}</a-tag>
+              </NuxtLink>
+              <a-typography-text type="secondary">{{ post.viewCount }} 阅读</a-typography-text>
+              <a-typography-text type="secondary">{{ post.likeCount || 0 }} 点赞</a-typography-text>
+              <a-typography-text type="secondary">{{ post.commentCount }} 评论</a-typography-text>
+            </a-space>
 
-          <a-space style="margin-bottom: 16px">
-            <a-button :type="liked ? 'primary' : 'default'" @click="toggleLike">
-              <HeartOutlined /> {{ liked ? '已赞' : '点赞' }} ({{ post.likeCount || 0 }})
-            </a-button>
-            <a-button :type="favorited ? 'primary' : 'default'" @click="toggleFavorite">
-              <StarOutlined /> {{ favorited ? '已收藏' : '收藏' }}
-            </a-button>
-          </a-space>
+            <a-space class="site-action-bar">
+              <a-button :type="liked ? 'primary' : 'default'" @click="toggleLike">
+                <HeartOutlined /> {{ liked ? '已赞' : '点赞' }} ({{ post.likeCount || 0 }})
+              </a-button>
+              <a-button :type="favorited ? 'primary' : 'default'" @click="toggleFavorite">
+                <StarOutlined /> {{ favorited ? '已收藏' : '收藏' }}
+              </a-button>
+            </a-space>
 
-          <a-space v-if="post.tags.length" wrap style="margin-bottom: 24px">
-            <NuxtLink v-for="tag in post.tags" :key="tag.id" :to="`/tags/${tag.slug}`">
-              <a-tag color="blue">{{ tag.name }}</a-tag>
-            </NuxtLink>
-          </a-space>
+            <a-space v-if="post.tags.length" wrap class="site-tag-bar">
+              <NuxtLink v-for="tag in post.tags" :key="tag.id" :to="`/tags/${tag.slug}`">
+                <a-tag>{{ tag.name }}</a-tag>
+              </NuxtLink>
+            </a-space>
 
-          <a-card :bordered="false">
+            <a-divider />
+
             <div class="prose-blog" v-html="post.htmlContent" />
-          </a-card>
 
-          <a-card v-if="post.related?.length" title="相关文章" style="margin-top: 24px">
-            <a-list size="small" :data-source="post.related">
-              <template #renderItem="{ item }">
-                <a-list-item>
-                  <NuxtLink :to="`/posts/${item.slug}`">
-                    <a-typography-link>{{ item.title }}</a-typography-link>
-                  </NuxtLink>
-                </a-list-item>
-              </template>
-            </a-list>
-          </a-card>
+            <template v-if="post.related?.length">
+              <a-divider />
+              <a-typography-title :level="5">相关文章</a-typography-title>
+              <a-list size="small" :data-source="post.related">
+                <template #renderItem="{ item }">
+                  <a-list-item>
+                    <NuxtLink :to="`/posts/${item.slug}`">
+                      <a-typography-link>{{ item.title }}</a-typography-link>
+                    </NuxtLink>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </template>
 
-          <CommentSection :post-id="post.id" />
+            <CommentSection :post-id="post.id" />
+          </SiteMainPanel>
         </template>
       </a-col>
 
@@ -59,7 +62,6 @@
         <Sidebar />
       </a-col>
     </a-row>
-  </div>
 </template>
 
 <script setup lang="ts">
